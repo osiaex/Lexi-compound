@@ -35,9 +35,53 @@ const ask = (question) =>
     colors.reset
   );
 
-  const openaiApiKey = await ask(
-    `${colors.yellow}Enter your OPENAI_API_KEY: ${colors.reset}`
+  // 选择API提供商
+  console.log(
+    colors.cyan,
+    `\n${emojis.info} Choose your AI API provider:`,
+    colors.reset
   );
+  console.log("1. OpenAI (GPT models)");
+  console.log("2. DeepSeek (DeepSeek models)");
+  
+  let apiProvider;
+  let apiKey;
+  let envKeyName;
+  
+  while (true) {
+    const choice = await ask(
+      `${colors.yellow}Enter your choice (1 for OpenAI, 2 for DeepSeek): ${colors.reset}`
+    );
+    
+    if (choice === "1") {
+      apiProvider = "OpenAI";
+      envKeyName = "OPENAI_API_KEY";
+      apiKey = await ask(
+        `${colors.yellow}Enter your OPENAI_API_KEY: ${colors.reset}`
+      );
+      break;
+    } else if (choice === "2") {
+      apiProvider = "DeepSeek";
+      envKeyName = "DEEPSEEK_API_KEY";
+      apiKey = await ask(
+        `${colors.yellow}Enter your DEEPSEEK_API_KEY: ${colors.reset}`
+      );
+      break;
+    } else {
+      console.log(
+        colors.red,
+        `${emojis.error} Invalid choice. Please enter 1 or 2.`,
+        colors.reset
+      );
+    }
+  }
+
+  console.log(
+    colors.green,
+    `${emojis.success} Selected ${apiProvider} as your AI provider.`,
+    colors.reset
+  );
+
   const mongodbUser = await ask(
     `${colors.yellow}Enter your MONGODB_USER: ${colors.reset}`
   );
@@ -55,7 +99,8 @@ const ask = (question) =>
   const jwtSecretKey = crypto.randomBytes(16).toString("hex");
 
   const envContent = `
-  OPENAI_API_KEY="${openaiApiKey}"
+  ${envKeyName}="${apiKey}"
+  API_PROVIDER="${apiProvider}"
   MONGODB_USER="${mongodbUser}"
   MONGODB_PASSWORD="${mongodbPassword}"
   MONGODB_URL="${mongodbUrl}"
@@ -109,4 +154,9 @@ const ask = (question) =>
 
   rl.close();
   console.log(colors.green, `${emojis.success} Setup complete!`, colors.reset);
+  console.log(
+    colors.cyan,
+    `${emojis.info} You can now start the server with: npm run dev`,
+    colors.reset
+  );
 })();

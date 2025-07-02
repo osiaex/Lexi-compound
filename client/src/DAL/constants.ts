@@ -8,7 +8,16 @@ export const defaultSliderSettings = {
     presencePenalty: 0,
 } as const;
 
-export const agentsOptions = ['gpt-3.5-turbo', 'gpt-4-1106-preview', 'gpt-4o', 'gpt-4o-mini'] as const;
+export const agentsOptions = [
+    // OpenAI Models
+    'gpt-3.5-turbo', 
+    'gpt-4-1106-preview', 
+    'gpt-4o', 
+    'gpt-4o-mini',
+    // DeepSeek Models
+    'deepseek-chat', 
+    'deepseek-reasoner'
+] as const;
 
 export const defaultSettings: AgentType = {
     _id: '',

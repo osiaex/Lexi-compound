@@ -9,9 +9,29 @@ import { usersService } from './users.service';
 
 dotenv.config();
 
-const { OPENAI_API_KEY } = process.env;
-if (!OPENAI_API_KEY) throw new Error('Server is not configured with OpenAI API key');
-const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+const { API_PROVIDER, OPENAI_API_KEY, DEEPSEEK_API_KEY } = process.env;
+
+let aiClient: OpenAI;
+let apiProviderName: string;
+
+// 根据API_PROVIDER环境变量初始化相应的客户端
+if (API_PROVIDER === 'DeepSeek') {
+    if (!DEEPSEEK_API_KEY) throw new Error('Server is not configured with DeepSeek API key');
+    aiClient = new OpenAI({ 
+        apiKey: DEEPSEEK_API_KEY,
+        baseURL: 'https://api.deepseek.com'
+    });
+    apiProviderName = 'DeepSeek';
+} else {
+    // 默认使用OpenAI
+    if (!OPENAI_API_KEY) throw new Error('Server is not configured with OpenAI API key');
+    aiClient = new OpenAI({ 
+        apiKey: OPENAI_API_KEY
+    });
+    apiProviderName = 'OpenAI';
+}
+
+console.log(`🤖 AI Service initialized with ${apiProviderName} API`);
 
 class ConversationsService {
     message = async (message, conversationId: string, streamResponse?) => {
@@ -36,10 +56,10 @@ class ConversationsService {
         let assistantMessage = '';
 
         if (!streamResponse) {
-            const response = await openai.chat.completions.create(chatRequest);
+            const response = await aiClient.chat.completions.create(chatRequest);
             assistantMessage = response.choices[0].message.content?.trim();
         } else {
-            const responseStream = await openai.chat.completions.create({ ...chatRequest, stream: true });
+            const responseStream = await aiClient.chat.completions.create({ ...chatRequest, stream: true });
             for await (const partialResponse of responseStream) {
                 const assistantMessagePart = partialResponse.choices[0]?.delta?.content || '';
                 await streamResponse(assistantMessagePart);

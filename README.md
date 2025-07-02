@@ -19,7 +19,9 @@ To set up and start using the project, follow these steps:
 Node.JS - <a href="https://nodejs.org/en">https://nodejs.org/en</a><br>
 Npm - <a href="https://docs.npmjs.com/downloading-and-installing-node-js-and-npm">https://docs.npmjs.com/downloading-and-installing-node-js-and-npm</a><br>
 Git - <a href ="https://git-scm.com/downloads">https://git-scm.com/downloads</a>
-OpenAI api key - <a href ="https://help.openai.com/en/articles/4936850-where-do-i-find-my-api-key">OpenAI api key info</a>
+AI API key - Choose one:
+- OpenAI API key - <a href ="https://help.openai.com/en/articles/4936850-where-do-i-find-my-api-key">OpenAI API key info</a>
+- DeepSeek API key - <a href ="https://platform.deepseek.com/api_keys">DeepSeek API key info</a>
 
 ### Step 1: Set Up MongoDB Database
 
@@ -57,7 +59,8 @@ git clone https://github.com/Tomer-Lavan/Lexi
 
 During the setup process, you'll be guided through a series of prompts to configure your environment:
 
-- `OPENAI_API_KEY`: Enter your OpenAI API key.
+- **AI Provider Selection**: Choose between OpenAI or DeepSeek as your AI API provider
+- `OPENAI_API_KEY` or `DEEPSEEK_API_KEY`: Enter your API key based on your chosen provider
 - `MONGODB_USER`: Enter the MongoDB username.
 - `MONGODB_PASSWORD`: Enter the password for MongoDB.
 - `MONGODB_URL`: Provide the MongoDB URL (mongodb+srv://<cluster-name>.mongodb.net).
@@ -70,7 +73,7 @@ Additionally, the setup script will guide you in creating an administrative user
 The setup script automates several important tasks to get your server up and running:
 
 - **Configures Environment Variables**: 
-  - It creates a `.env` file containing essential environment variables like your OpenAI API key, MongoDB credentials, and other necessary configurations.
+  - It creates a `.env` file containing essential environment variables like your chosen AI API key, MongoDB credentials, and other necessary configurations.
 - **Installs Dependencies**: 
   - Executes `npm install` to install all the necessary npm packages that the server requires to function properly.
 - **Builds the Project**: 
