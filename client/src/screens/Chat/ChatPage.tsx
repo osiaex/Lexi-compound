@@ -4,7 +4,8 @@ import LoadingPage from '@components/common/LoadingPage';
 import { SnackbarStatus, useSnackbar } from '@contexts/SnackbarProvider';
 import { useConversationId } from '@hooks/useConversationId';
 import useEffectAsync from '@hooks/useEffectAsync';
-import { Dialog, Grid, useMediaQuery } from '@mui/material';
+import { Dialog, Grid, useMediaQuery, Fab, Tooltip } from '@mui/material';
+import { SmartToy as BotIcon } from '@mui/icons-material';
 import theme from '@root/Theme';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -16,6 +17,7 @@ import { MainContainer, MessageListContainer, SectionContainer, SectionInnerCont
 import MessageList from './components/MessageList';
 import InputBox from './components/input-box/InputBox';
 import { SidebarChat } from './components/side-bar-chat/SideBarChat';
+import DIDAgent from './components/DIDAgent';
 
 interface ChatPageProps {
     isFinishDialogOpen: boolean;
@@ -36,6 +38,7 @@ const ChatPage: React.FC<ChatPageProps> = ({ isFinishDialogOpen, setIsFinishDial
     const [isPageLoading, setIsPageLoading] = useState(true);
     const [experimentFeatures, setExperimentFeatures] = useState(null);
     const [isMessageLoading, setIsMessageLoading] = useState(false);
+    const [showDIDAgent, setShowDIDAgent] = useState(false);
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const questionnaireLink = 'https://docs.google.com/forms/u/0/?tgif=d&ec=asw-forms-hero-goto';
     const conversationId = useConversationId();
@@ -86,6 +89,14 @@ const ChatPage: React.FC<ChatPageProps> = ({ isFinishDialogOpen, setIsFinishDial
         }
     };
 
+    const handleToggleDIDAgent = () => {
+        setShowDIDAgent(!showDIDAgent);
+    };
+
+    const handleCloseDIDAgent = () => {
+        setShowDIDAgent(false);
+    };
+
     return isPageLoading ? (
         <LoadingPage />
     ) : (
@@ -96,6 +107,8 @@ const ChatPage: React.FC<ChatPageProps> = ({ isFinishDialogOpen, setIsFinishDial
                         setIsOpen={setIsFinishDialogOpen}
                         setMessageFontSize={setMessageFontSize}
                         messageFontSize={messageFontSize}
+                        showDIDAgent={showDIDAgent}
+                        onToggleDIDAgent={handleToggleDIDAgent}
                     />
                 </Grid>
             )}
@@ -126,6 +139,27 @@ const ChatPage: React.FC<ChatPageProps> = ({ isFinishDialogOpen, setIsFinishDial
                     </SectionInnerContainer>
                 </SectionContainer>
             </Grid>
+
+            <Tooltip title="Open AI Avatar" placement="left">
+                <Fab
+                    color="primary"
+                    onClick={handleToggleDIDAgent}
+                    sx={{
+                        position: 'fixed',
+                        bottom: isMobile ? 90 : 80,
+                        right: 20,
+                        zIndex: 999,
+                    }}
+                >
+                    <BotIcon />
+                </Fab>
+            </Tooltip>
+
+            <DIDAgent
+                isVisible={showDIDAgent}
+                onClose={handleCloseDIDAgent}
+            />
+
             {isFinishDialogOpen && (
                 <FinishConversationDialog
                     open={isFinishDialogOpen}
