@@ -21,6 +21,13 @@ export interface ExperimentForms {
 export interface ExperimentFeatures {
     userAnnotation: boolean;
     streamMessage: boolean;
+    sadTalker: {
+        enabled: boolean;
+        customAvatar: boolean;
+        autoPlay: boolean;
+        ttsService: 'openai' | 'edgetts';
+        edgeTtsVoice?: string;
+    };
 }
 
 export interface IExperimentLean {

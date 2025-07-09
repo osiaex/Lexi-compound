@@ -4,7 +4,7 @@ import LoadingPage from '@components/common/LoadingPage';
 import { SnackbarStatus, useSnackbar } from '@contexts/SnackbarProvider';
 import { useConversationId } from '@hooks/useConversationId';
 import useEffectAsync from '@hooks/useEffectAsync';
-import { Dialog, Grid, useMediaQuery } from '@mui/material';
+import { Dialog, Grid, useMediaQuery, Box, Typography } from '@mui/material';
 import theme from '@root/Theme';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -16,6 +16,7 @@ import { MainContainer, MessageListContainer, SectionContainer, SectionInnerCont
 import MessageList from './components/MessageList';
 import InputBox from './components/input-box/InputBox';
 import { SidebarChat } from './components/side-bar-chat/SideBarChat';
+import AvatarUploader from './components/AvatarUploader';
 
 interface ChatPageProps {
     isFinishDialogOpen: boolean;
@@ -36,6 +37,8 @@ const ChatPage: React.FC<ChatPageProps> = ({ isFinishDialogOpen, setIsFinishDial
     const [isPageLoading, setIsPageLoading] = useState(true);
     const [experimentFeatures, setExperimentFeatures] = useState(null);
     const [isMessageLoading, setIsMessageLoading] = useState(false);
+    const [hasCustomAvatar, setHasCustomAvatar] = useState(false);
+    const [currentAvatarUrl, setCurrentAvatarUrl] = useState<string | null>(null);
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const questionnaireLink = 'https://docs.google.com/forms/u/0/?tgif=d&ec=asw-forms-hero-goto';
     const conversationId = useConversationId();
@@ -62,6 +65,12 @@ const ChatPage: React.FC<ChatPageProps> = ({ isFinishDialogOpen, setIsFinishDial
             setConversationForms(conversationForms);
             setExperimentFeatures(experimentFeaturesRes);
             setMessages(conversation.length ? conversation : []);
+            
+            // 检查是否有自定义头像
+            if (experimentFeaturesRes?.sadTalker?.enabled) {
+                checkUserAvatar();
+            }
+            
             setIsPageLoading(false);
         } catch (err) {
             openSnackbar('Failed to load conversation', SnackbarStatus.ERROR);
@@ -75,6 +84,24 @@ const ChatPage: React.FC<ChatPageProps> = ({ isFinishDialogOpen, setIsFinishDial
         setIsSurveyOpen(false);
     };
 
+    const checkUserAvatar = async () => {
+        try {
+            const response = await fetch(`${process.env.REACT_APP_API_URL}/sadtalker/user-avatar/${conversationId}`, {
+                credentials: 'include'
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.avatarUrl) {
+                    setHasCustomAvatar(true);
+                    setCurrentAvatarUrl(data.avatarUrl);
+                }
+            }
+        } catch (error) {
+            console.error('Failed to check user avatar:', error);
+        }
+    };
+
     const handleUpdateUserAnnotation = async (messageId: string, userAnnotation: UserAnnotation) => {
         try {
             await updateUserAnnotation(messageId, userAnnotation);
@@ -85,6 +112,22 @@ const ChatPage: React.FC<ChatPageProps> = ({ isFinishDialogOpen, setIsFinishDial
             console.log(error);
         }
     };
+
+    const handleAvatarUpload = (success: boolean) => {
+        if (success) {
+            setHasCustomAvatar(true);
+            openSnackbar('头像上传成功！', SnackbarStatus.SUCCESS);
+            // 重新检查头像状态
+            checkUserAvatar();
+        } else {
+            openSnackbar('头像上传失败', SnackbarStatus.ERROR);
+        }
+    };
+
+    // 检查是否启用了 SadTalker 功能和自定义头像功能
+    const isSadTalkerEnabled = experimentFeatures?.sadTalker?.enabled;
+    const isCustomAvatarAllowed = experimentFeatures?.sadTalker?.customAvatar;
+    const shouldShowAvatarUploader = isSadTalkerEnabled && isCustomAvatarAllowed;
 
     return isPageLoading ? (
         <LoadingPage />
@@ -110,9 +153,37 @@ const ChatPage: React.FC<ChatPageProps> = ({ isFinishDialogOpen, setIsFinishDial
                                 size={messageFontSize}
                                 handleUpdateUserAnnotation={handleUpdateUserAnnotation}
                                 experimentHasUserAnnotation={experimentFeatures?.userAnnotation}
+                                experimentFeatures={experimentFeatures}
                             />
                         </MessageListContainer>
-                        <Grid item display={'flex'} justifyContent={'center'}>
+                        <Grid item display={'flex'} justifyContent={'center'} flexDirection="column" alignItems="center">
+                            {/* 头像上传功能 - 只在启用 SadTalker 时显示 */}
+                            {shouldShowAvatarUploader && (
+                                <Grid item style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    {hasCustomAvatar && currentAvatarUrl && (
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <img 
+                                                src={`${process.env.REACT_APP_API_URL}${currentAvatarUrl}`}
+                                                alt="Current Avatar" 
+                                                style={{
+                                                    width: '40px',
+                                                    height: '40px',
+                                                    borderRadius: '50%',
+                                                    objectFit: 'cover',
+                                                    border: '2px solid #4caf50'
+                                                }}
+                                            />
+                                            <Typography variant="caption" color="success.main">
+                                                ✓ 自定义头像已设置
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                    <AvatarUploader 
+                                        conversationId={conversationId}
+                                        onAvatarUploaded={handleAvatarUpload}
+                                    />
+                                </Grid>
+                            )}
                             <InputBox
                                 isMobile={isMobile}
                                 messages={messages}
@@ -121,6 +192,7 @@ const ChatPage: React.FC<ChatPageProps> = ({ isFinishDialogOpen, setIsFinishDial
                                 setIsMessageLoading={setIsMessageLoading}
                                 fontSize={messageFontSize}
                                 isStreamMessage={experimentFeatures?.streamMessage}
+                                experimentFeatures={experimentFeatures}
                             />
                         </Grid>
                     </SectionInnerContainer>

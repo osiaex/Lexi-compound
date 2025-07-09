@@ -1,5 +1,5 @@
 import { SnackbarStatus, useSnackbar } from '@contexts/SnackbarProvider';
-import { MessageType } from '@models/AppModels';
+import { MessageType, ExperimentFeatures } from '@models/AppModels';
 import SendIcon from '@mui/icons-material/Send';
 import { Box, Button, IconButton } from '@mui/material';
 import { useState } from 'react';
@@ -14,6 +14,7 @@ interface InputBoxProps {
     setIsMessageLoading: (isLoading: boolean) => void;
     fontSize: string;
     isStreamMessage: boolean;
+    experimentFeatures?: ExperimentFeatures;
 }
 
 const InputBox: React.FC<InputBoxProps> = ({
@@ -24,6 +25,7 @@ const InputBox: React.FC<InputBoxProps> = ({
     setMessages,
     setIsMessageLoading,
     isStreamMessage,
+    experimentFeatures,
 }) => {
     const { openSnackbar } = useSnackbar();
     const [message, setMessage] = useState('');
@@ -47,9 +49,10 @@ const InputBox: React.FC<InputBoxProps> = ({
                     onStreamMessage,
                     onCloseStream,
                     (error) => onMessageError(conversation, messageContent, error),
+                    experimentFeatures,
                 );
             } else {
-                const response = await sendMessage({ content: messageContent, role: 'user' }, conversationId);
+                const response = await sendMessage({ content: messageContent, role: 'user' }, conversationId, experimentFeatures);
                 setMessages((prevMessages) => [...prevMessages, response]);
                 setIsMessageLoading(false);
                 setErrorMessage(null);

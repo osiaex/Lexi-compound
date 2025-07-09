@@ -6,6 +6,9 @@ import { ConversationsModel } from '../models/ConversationsModel';
 import { MetadataConversationsModel } from '../models/MetadataConversationsModel';
 import { experimentsService } from './experiments.service';
 import { usersService } from './users.service';
+import { sadTalkerService } from './sadtalker.service';
+import { ttsService } from './tts.service';
+import edgeTtsService from './edgeTts.service';
 
 dotenv.config();
 
@@ -34,7 +37,7 @@ if (API_PROVIDER === 'DeepSeek') {
 console.log(`🤖 AI Service initialized with ${apiProviderName} API`);
 
 class ConversationsService {
-    message = async (message, conversationId: string, streamResponse?) => {
+    message = async (message, conversationId: string, streamResponse?, experimentFeatures?) => {
         const [conversation, metadataConversation] = await Promise.all([
             this.getConversation(conversationId, true),
             this.getConversationMetadata(conversationId),
@@ -54,10 +57,22 @@ class ConversationsService {
         await this.createMessageDoc(message, conversationId, conversation.length + 1);
 
         let assistantMessage = '';
+        let talkingVideoBase64 = '';
 
         if (!streamResponse) {
             const response = await aiClient.chat.completions.create(chatRequest);
             assistantMessage = response.choices[0].message.content?.trim();
+            
+            // 如果启用了SadTalker，生成说话视频
+            if (experimentFeatures?.sadTalker?.enabled && assistantMessage) {
+                try {
+                    console.log('Generating talking video for message...');
+                    talkingVideoBase64 = await this.generateTalkingVideo(assistantMessage, conversationId, experimentFeatures);
+                } catch (error) {
+                    console.error('Failed to generate talking video:', error);
+                    // 即使视频生成失败，也要返回文本消息
+                }
+            }
         } else {
             const responseStream = await aiClient.chat.completions.create({ ...chatRequest, stream: true });
             for await (const partialResponse of responseStream) {
@@ -65,12 +80,23 @@ class ConversationsService {
                 await streamResponse(assistantMessagePart);
                 assistantMessage += assistantMessagePart;
             }
+            
+            // 流式完成后生成视频
+            if (experimentFeatures?.sadTalker?.enabled && assistantMessage) {
+                try {
+                    console.log('Generating talking video for streamed message...');
+                    talkingVideoBase64 = await this.generateTalkingVideo(assistantMessage, conversationId, experimentFeatures);
+                } catch (error) {
+                    console.error('Failed to generate talking video:', error);
+                }
+            }
         }
 
         const savedMessage = await this.createMessageDoc(
             {
                 content: assistantMessage,
                 role: 'assistant',
+                talkingVideo: talkingVideoBase64 || undefined,
             },
             conversationId,
             conversation.length + 2,
@@ -128,8 +154,8 @@ class ConversationsService {
 
     getConversation = async (conversationId: string, isLean = false): Promise<Message[]> => {
         const returnValues = isLean
-            ? { _id: 0, role: 1, content: 1 }
-            : { _id: 1, role: 1, content: 1, userAnnotation: 1 };
+            ? { _id: 0, role: 1, content: 1, talkingVideo: 1 }
+            : { _id: 1, role: 1, content: 1, userAnnotation: 1, talkingVideo: 1 };
 
         const conversation = await ConversationsModel.find({ conversationId }, returnValues);
 
@@ -233,9 +259,117 @@ class ConversationsService {
             role: message.role,
             conversationId,
             messageNumber,
+            talkingVideo: message.talkingVideo,
         });
 
-        return { _id: res._id, role: res.role, content: res.content, userAnnotation: res.userAnnotation };
+        return { 
+            _id: res._id, 
+            role: res.role, 
+            content: res.content, 
+            userAnnotation: res.userAnnotation,
+            talkingVideo: res.talkingVideo 
+        };
+    };
+
+    // 生成说话视频
+    private generateTalkingVideo = async (text: string, conversationId: string, experimentFeatures?: any): Promise<string> => {
+        console.log('Starting video generation for conversation:', conversationId);
+        
+        try {
+            if (!await sadTalkerService.checkServiceHealth()) {
+                console.error('SadTalker service health check failed');
+                throw new Error('SadTalker service not available');
+            }
+            
+            // 获取用户设置的头像或使用默认头像
+            console.log('Fetching avatar for conversation:', conversationId);
+            const userAvatarData = await this.getUserAvatar(conversationId);
+            console.log('User avatar data:', userAvatarData ? 'found' : 'not found');
+            
+            const defaultAvatarData = userAvatarData ? null : await sadTalkerService.getDefaultAvatar();
+            console.log('Default avatar data:', defaultAvatarData ? 'found' : 'not found');
+            
+            const avatarImage = userAvatarData || (defaultAvatarData ? defaultAvatarData.avatarBase64 : '');
+            
+            if (!avatarImage) {
+                console.error('No avatar available for video generation');
+                throw new Error('No avatar available for video generation');
+            }
+            
+            console.log('Avatar image length:', avatarImage.length);
+            
+            // 根据配置选择 TTS 服务
+            let audioBase64: string;
+            const ttsServiceType = experimentFeatures?.sadTalker?.ttsService || 'edgetts';
+            console.log('Using TTS service:', ttsServiceType);
+            
+            if (ttsServiceType === 'edgetts') {
+                // 使用 EdgeTTS
+                const edgeTtsVoice = experimentFeatures?.sadTalker?.edgeTtsVoice || 'zh-CN-XiaoxiaoNeural';
+                console.log(`Using EdgeTTS with voice: ${edgeTtsVoice}`);
+                
+                const audioBuffer = await edgeTtsService.generateSpeech(text, {
+                    voice: edgeTtsVoice,
+                    rate: '+0%',
+                    pitch: '+0Hz',
+                    volume: '+0%'
+                });
+                audioBase64 = audioBuffer.toString('base64');
+            } else {
+                // 使用 OpenAI TTS
+                if (!ttsService.isAvailable()) {
+                    // 如果 OpenAI 不可用，回退到 EdgeTTS
+                    console.log('OpenAI TTS not available, falling back to EdgeTTS');
+                    const audioBuffer = await edgeTtsService.generateSpeech(text, {
+                        voice: 'zh-CN-XiaoxiaoNeural'
+                    });
+                    audioBase64 = audioBuffer.toString('base64');
+                } else {
+                    console.log('Using OpenAI TTS');
+                    audioBase64 = await ttsService.textToSpeech(text);
+                }
+            }
+            
+            console.log('Audio generation completed, length:', audioBase64.length);
+            
+            // 生成说话视频
+            console.log('Starting SadTalker video generation...');
+            const videoBase64 = await sadTalkerService.generateTalkingVideo(
+                avatarImage,
+                audioBase64,
+                {
+                    enhancer: true,
+                    preprocess: 'crop',
+                    still: false,
+                    size: 256
+                }
+            );
+            
+            console.log('Video generation completed successfully, length:', videoBase64.length);
+            return videoBase64;
+            
+        } catch (error) {
+            console.error('Failed to generate talking video:', error);
+            console.error('Error details:', {
+                message: error.message,
+                stack: error.stack,
+                conversationId,
+                textLength: text.length
+            });
+            throw error;
+        }
+    };
+    
+    // 获取用户自定义头像
+    private getUserAvatar = async (conversationId: string): Promise<string | null> => {
+        try {
+            // 使用 SadTalker 服务获取用户头像
+            const avatarData = await sadTalkerService.getUserAvatar(conversationId);
+            return avatarData?.avatarBase64 || null;
+        } catch (error) {
+            console.error('Failed to get user avatar:', error);
+            return null;
+        }
     };
 
     private getChatRequest = (agent: IAgent, messages: Message[]) => {

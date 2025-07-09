@@ -5,6 +5,7 @@ export interface MessageType {
     role: 'system' | 'user' | 'assistant';
     content: string;
     userAnnotation?: UserAnnotation;
+    talkingVideo?: string;
 }
 
 export type UserAnnotation = 1 | 0 | -1;
@@ -120,6 +121,13 @@ export interface ExperimentLeanType {
 export interface ExperimentFeatures {
     userAnnotation: boolean;
     streamMessage: boolean;
+    sadTalker: {
+        enabled: boolean;
+        customAvatar: boolean;
+        autoPlay: boolean;
+        ttsService: 'openai' | 'edgetts';
+        edgeTtsVoice?: string;
+    };
 }
 
 export interface NewUserInfoType {

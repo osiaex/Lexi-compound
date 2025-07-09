@@ -66,6 +66,13 @@ export const defaultExperiment = {
     experimentFeatures: {
         userAnnotation: false,
         streamMessage: false,
+        sadTalker: {
+            enabled: false,
+            customAvatar: false,
+            autoPlay: true,
+            ttsService: 'edgetts',
+            edgeTtsVoice: 'zh-CN-XiaoxiaoNeural',
+        },
     },
 } as const;
 
