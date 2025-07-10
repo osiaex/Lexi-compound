@@ -91,6 +91,7 @@ export const AdminSections = {
     EXPERIMENTS: 'experiments',
     FORMS: 'forms',
     DATA: 'data',
+    PYLIPS: 'pylips',
     SETTINGS: 'settings',
 } as const;
 

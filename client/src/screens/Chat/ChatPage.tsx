@@ -12,6 +12,7 @@ import { getExperimentCoversationForms, getExperimentFeatures } from '../../DAL/
 import { ConversationForm } from '../../components/forms/conversation-form/ConversationForm';
 import { useExperimentId } from '../../hooks/useExperimentId';
 import { UserAnnotation } from '../../models/AppModels';
+import PyLipsFaceViewer from '../../components/pylips/PyLipsFaceViewer';
 import { MainContainer, MessageListContainer, SectionContainer, SectionInnerContainer } from './ChatPage.s';
 import MessageList from './components/MessageList';
 import InputBox from './components/input-box/InputBox';
@@ -36,6 +37,7 @@ const ChatPage: React.FC<ChatPageProps> = ({ isFinishDialogOpen, setIsFinishDial
     const [isPageLoading, setIsPageLoading] = useState(true);
     const [experimentFeatures, setExperimentFeatures] = useState(null);
     const [isMessageLoading, setIsMessageLoading] = useState(false);
+    const [showPyLipsFace, setShowPyLipsFace] = useState(true);
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const questionnaireLink = 'https://docs.google.com/forms/u/0/?tgif=d&ec=asw-forms-hero-goto';
     const conversationId = useConversationId();
@@ -102,6 +104,14 @@ const ChatPage: React.FC<ChatPageProps> = ({ isFinishDialogOpen, setIsFinishDial
             <Grid item xs={12} sm={10} md={10} lg={10}>
                 <SectionContainer>
                     <SectionInnerContainer container direction="column">
+                        {/* PyLips数字人脸显示区域 */}
+                        <Grid item sx={{ width: '100%', maxWidth: '400px', alignSelf: 'center', mb: 2 }}>
+                            <PyLipsFaceViewer
+                                isVisible={showPyLipsFace}
+                                onToggleVisibility={() => setShowPyLipsFace(!showPyLipsFace)}
+                                conversationId={conversationId}
+                            />
+                        </Grid>
                         <MessageListContainer ref={messagesRef} item>
                             <MessageList
                                 isMobile={isMobile}

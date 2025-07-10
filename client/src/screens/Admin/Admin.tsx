@@ -21,6 +21,7 @@ interface Form {
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { DataPanel } from './components/data-panel/DataPanel';
 import { SettingsPanel } from './components/settings-panel/SettingsPanel';
+import PyLipsPanel from './components/pylips-panel/PyLipsPanel';
 
 const Admin = () => {
     const [agents, setAgents] = useState<AgentType[]>([]);
@@ -68,6 +69,7 @@ const Admin = () => {
                                 element={<FormsPanel forms={forms} setForms={setForms} />}
                             />
                             <Route path={AdminSections.DATA} element={<DataPanel />} />
+                            <Route path={AdminSections.PYLIPS} element={<PyLipsPanel />} />
                             <Route path={AdminSections.SETTINGS} element={<SettingsPanel />} />
                         </Routes>
                     </SectionInnerContainer>

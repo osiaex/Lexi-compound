@@ -7,6 +7,7 @@ import ExitToAppOutlinedIcon from '@mui/icons-material/ExitToAppOutlined';
 import InsertChartOutlinedOutlinedIcon from '@mui/icons-material/InsertChartOutlinedOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
+import FaceIcon from '@mui/icons-material/Face';
 import { Divider, List, ListItem, Typography } from '@mui/material';
 import { useDispatch } from 'react-redux';
 import { MainContainer, StyledListItemIcon } from './SideBar.s';
@@ -17,6 +18,7 @@ const sectionsConfig = [
     { id: AdminSections.AGENTS, label: 'Agents', Icon: AutoAwesomeOutlinedIcon },
     { id: AdminSections.FORMS, label: 'Forms', Icon: TextSnippetIcon },
     { id: AdminSections.DATA, label: 'Data', Icon: InsertChartOutlinedOutlinedIcon },
+    { id: AdminSections.PYLIPS, label: 'PyLips', Icon: FaceIcon },
     { id: AdminSections.SETTINGS, label: 'Settings', Icon: SettingsOutlinedIcon },
 ];
 

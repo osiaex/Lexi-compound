@@ -10,6 +10,7 @@ import { dataAggregationRouter } from './routers/dataAggregationRouter.router';
 import { experimentsRouter } from './routers/experimentsRouter.router';
 import { formsRouter } from './routers/formsRouter';
 import { usersRouter } from './routers/usersRouter.router';
+import { pylipsRouter } from './routers/pylipsRouter.router';
 import { usersService } from './services/users.service';
 
 dotenv.config();
@@ -52,6 +53,7 @@ const setupServer = () => {
     app.use('/agents', agentsRouter());
     app.use('/dataAggregation', dataAggregationRouter());
     app.use('/forms', formsRouter());
+    app.use('/pylips', pylipsRouter());
 
     app.listen(PORT, () => {
         console.log(`Server started on http://localhost:${PORT}`);

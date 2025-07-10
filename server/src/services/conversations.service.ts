@@ -6,6 +6,7 @@ import { ConversationsModel } from '../models/ConversationsModel';
 import { MetadataConversationsModel } from '../models/MetadataConversationsModel';
 import { experimentsService } from './experiments.service';
 import { usersService } from './users.service';
+import { pylipsService } from './pylips.service';
 
 dotenv.config();
 
@@ -81,6 +82,9 @@ class ConversationsService {
             $set: { lastMessageDate: new Date(), lastMessageTimestamp: Date.now() },
         });
 
+        // 触发PyLips语音播放（非阻塞）
+        this.triggerPyLipsResponse(assistantMessage);
+
         return savedMessage;
     };
 
@@ -122,6 +126,9 @@ class ConversationsService {
             usersService.addConversation(userId),
             !user.isAdmin && experimentsService.addSession(experimentId),
         ]);
+
+        // 触发第一条消息的PyLips语音播放
+        this.triggerPyLipsResponse(firstMessage.content);
 
         return res._id.toString();
     };
@@ -264,6 +271,20 @@ class ConversationsService {
             { $project: { _id: 0, ids: 1, strIds: 1 } },
         ]);
         return conversationsIds[0];
+    };
+
+    /**
+     * 触发PyLips语音响应（非阻塞）
+     */
+    private triggerPyLipsResponse = async (text: string) => {
+        try {
+            // 异步触发PyLips语音播放，不阻塞主流程
+            pylipsService.speakWithExpression(text, false).catch(error => {
+                console.warn('PyLips语音播放失败:', error.message);
+            });
+        } catch (error) {
+            console.warn('触发PyLips响应失败:', error.message);
+        }
     };
 }
 
