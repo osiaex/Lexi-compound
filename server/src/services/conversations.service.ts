@@ -281,19 +281,16 @@ class ConversationsService {
                 throw new Error('SadTalker service not available');
             }
             
-            // 获取用户设置的头像或使用默认头像
-            console.log('Fetching avatar for conversation:', conversationId);
-            const userAvatarData = await this.getUserAvatar(conversationId);
-            console.log('User avatar data:', userAvatarData ? 'found' : 'not found');
-            
-            const defaultAvatarData = userAvatarData ? null : await sadTalkerService.getDefaultAvatar();
+            // 只使用默认头像（管理员设置的头像）
+            console.log('Fetching default avatar...');
+            const defaultAvatarData = await sadTalkerService.getDefaultAvatar();
             console.log('Default avatar data:', defaultAvatarData ? 'found' : 'not found');
             
-            const avatarImage = userAvatarData || (defaultAvatarData ? defaultAvatarData.avatarBase64 : '');
+            const avatarImage = defaultAvatarData ? defaultAvatarData.avatarBase64 : '';
             
             if (!avatarImage) {
-                console.error('No avatar available for video generation');
-                throw new Error('No avatar available for video generation');
+                console.error('No default avatar available for video generation');
+                throw new Error('No default avatar available - please contact administrator to set up default avatar');
             }
             
             console.log('Avatar image length:', avatarImage.length);
@@ -338,7 +335,7 @@ class ConversationsService {
                 avatarImage,
                 audioBase64,
                 {
-                    enhancer: true,
+                    enhancer: false, // 禁用gfpgan enhancer以避免依赖问题
                     preprocess: 'crop',
                     still: false,
                     size: 256
@@ -356,21 +353,15 @@ class ConversationsService {
                 conversationId,
                 textLength: text.length
             });
-            throw error;
+            
+            // 不再抛出错误，而是返回空字符串，让消息仍然能够显示
+            // 这样用户仍然能看到文本消息，只是没有视频
+            return '';
         }
     };
     
-    // 获取用户自定义头像
-    private getUserAvatar = async (conversationId: string): Promise<string | null> => {
-        try {
-            // 使用 SadTalker 服务获取用户头像
-            const avatarData = await sadTalkerService.getUserAvatar(conversationId);
-            return avatarData?.avatarBase64 || null;
-        } catch (error) {
-            console.error('Failed to get user avatar:', error);
-            return null;
-        }
-    };
+    // 移除用户头像获取方法 - 统一使用默认头像
+    // private getUserAvatar 方法已删除
 
     private getChatRequest = (agent: IAgent, messages: Message[]) => {
         const chatCompletionsReq = {

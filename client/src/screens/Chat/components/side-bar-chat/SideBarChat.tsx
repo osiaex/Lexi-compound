@@ -3,12 +3,11 @@ import ExitToAppOutlinedIcon from '@mui/icons-material/ExitToAppOutlined';
 import { Box, ListItem } from '@mui/material';
 import { ListItemText, StyledListItemIcon } from '../../../Admin/components/sidebar-admin/SideBar.s';
 import { StyledList, StyledListItem } from './SideBarChat.s';
-import { ExperimentFeatures } from '@models/AppModels';
 
 interface SidebarProps {
-    setIsOpen;
-    setMessageFontSize;
-    messageFontSize;
+    setIsOpen: (open: boolean) => void;
+    setMessageFontSize: (size: 'sm' | 'lg') => void;
+    messageFontSize: 'sm' | 'lg';
 }
 
 export const SidebarChat: React.FC<SidebarProps> = ({ 
@@ -30,8 +29,6 @@ export const SidebarChat: React.FC<SidebarProps> = ({
                 </ListItemText>
             </ListItem>
         </Box>
-        
-
         
         <Box paddingLeft={'16px'}>
             <ListItemText width={'80%'} textAlign={'left'} sx={{ fontSize: '0.875rem' }}>

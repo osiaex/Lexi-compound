@@ -4,31 +4,8 @@ import edgeTtsService from '../services/edgeTts.service';
 import { requestHandler } from '../utils/requestHandler';
 
 class SadTalkerController {
-    uploadAvatar = requestHandler(async (req: Request, res: Response) => {
-        const { conversationId, avatarBase64 } = req.body;
-        
-        if (!conversationId || !avatarBase64) {
-            res.status(400).json({ message: 'Missing conversationId or avatarBase64' });
-            return;
-        }
-        
-        try {
-            // 存储用户上传的头像
-            const result = await sadTalkerService.storeUserAvatar(conversationId, avatarBase64);
-            
-            res.status(200).json({ 
-                success: true,
-                message: 'Avatar uploaded successfully',
-                avatarUrl: result.avatarUrl
-            });
-        } catch (error) {
-            console.error('Avatar upload failed:', error);
-            res.status(500).json({ 
-                success: false,
-                message: 'Failed to upload avatar' 
-            });
-        }
-    });
+    // 移除用户头像上传功能 - 受试用户不应该能够上传头像
+    // uploadAvatar 方法已删除
     
     healthCheck = requestHandler(async (req: Request, res: Response) => {
         try {
@@ -38,7 +15,6 @@ class SadTalkerController {
                 healthy: isHealthy,
                 services: {
                     sadtalker: isHealthy,
-                    // tts: ttsService.isAvailable() // 如需要的话可以添加
                 }
             });
         } catch (error) {
@@ -68,6 +44,7 @@ class SadTalkerController {
         }
     });
 
+    // 管理员专用：上传默认头像
     uploadDefaultAvatar = requestHandler(async (req: Request, res: Response) => {
         const { avatarBase64 } = req.body;
         
@@ -93,6 +70,7 @@ class SadTalkerController {
         }
     });
 
+    // 管理员专用：删除默认头像
     deleteDefaultAvatar = requestHandler(async (req: Request, res: Response) => {
         try {
             await sadTalkerService.deleteDefaultAvatar();
@@ -110,30 +88,8 @@ class SadTalkerController {
         }
     });
 
-    getUserAvatar = requestHandler(async (req: Request, res: Response) => {
-        const { conversationId } = req.params;
-        
-        if (!conversationId) {
-            res.status(400).json({ message: 'Missing conversationId' });
-            return;
-        }
-        
-        try {
-            const avatarData = await sadTalkerService.getUserAvatar(conversationId);
-            
-            res.status(200).json({ 
-                success: true,
-                avatarUrl: avatarData?.avatarUrl || null,
-                avatarBase64: avatarData?.avatarBase64 || null
-            });
-        } catch (error) {
-            console.error('Get user avatar failed:', error);
-            res.status(500).json({ 
-                success: false,
-                message: 'Failed to get user avatar' 
-            });
-        }
-    });
+    // 移除用户头像获取功能 - 统一使用默认头像
+    // getUserAvatar 方法已删除
 
     checkEdgeTtsHealth = requestHandler(async (req: Request, res: Response) => {
         try {

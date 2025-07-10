@@ -23,7 +23,6 @@ export interface ExperimentFeatures {
     streamMessage: boolean;
     sadTalker: {
         enabled: boolean;
-        customAvatar: boolean;
         autoPlay: boolean;
         ttsService: 'openai' | 'edgetts';
         edgeTtsVoice?: string;

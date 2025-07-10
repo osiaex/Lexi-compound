@@ -10,6 +10,18 @@
 
 This platform is designed to facilitate advanced research in the field of user-bot interactions and LLMS models. It offers a comprehensive environment for conducting, monitoring, and analyzing experiments in this cutting-edge domain.
 
+## 🎯 Features
+
+- **Multi-Agent Conversations**: Support for single-agent or A/B testing with multiple AI agents
+- **Real-time Chat**: Seamless conversation flow with streaming message support
+- **AI Avatar Integration**: Interactive D-ID digital avatars for enhanced user experience
+- **User Annotations**: Collect user feedback and reactions during conversations
+- **Flexible Forms**: Customizable pre and post-conversation questionnaires
+- **Experiment Management**: Comprehensive admin panel for managing experiments and participants
+- **Analytics Dashboard**: Real-time insights into conversation metrics and user engagement
+- **Responsive Design**: Optimized for both desktop and mobile devices
+- **Multiple AI Providers**: Support for OpenAI and DeepSeek APIs
+
 ## 🚀 Quick Start
 
 To set up and start using the project, follow these steps:

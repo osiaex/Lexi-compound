@@ -261,57 +261,8 @@ class SadTalkerService {
         }
     };
 
-    // 存储用户上传的头像
-    storeUserAvatar = async (conversationId: string, avatarBase64: string): Promise<{ avatarUrl: string }> => {
-        try {
-            const userAvatarPath = path.join(this.uploadsDir, `avatar-${conversationId}.jpg`);
-            const imageBuffer = Buffer.from(avatarBase64, 'base64');
-            await writeFile(userAvatarPath, imageBuffer);
-            
-            console.log('User avatar stored successfully:', userAvatarPath);
-            return {
-                avatarUrl: `/uploads/avatar-${conversationId}.jpg`
-            };
-        } catch (error) {
-            console.error('Failed to store user avatar:', error);
-            throw new Error('Failed to store user avatar');
-        }
-    };
-
-    // 获取用户头像
-    getUserAvatar = async (conversationId: string): Promise<AvatarData | null> => {
-        try {
-            const userAvatarPath = path.join(this.uploadsDir, `avatar-${conversationId}.jpg`);
-            
-            if (fs.existsSync(userAvatarPath)) {
-                const buffer = await readFile(userAvatarPath);
-                return {
-                    avatarUrl: `/uploads/avatar-${conversationId}.jpg`,
-                    avatarBase64: buffer.toString('base64')
-                };
-            }
-            
-            return null;
-        } catch (error) {
-            console.error('Failed to get user avatar:', error);
-            return null;
-        }
-    };
-
-    // 删除用户头像
-    deleteUserAvatar = async (conversationId: string): Promise<void> => {
-        try {
-            const userAvatarPath = path.join(this.uploadsDir, `avatar-${conversationId}.jpg`);
-            
-            if (fs.existsSync(userAvatarPath)) {
-                await unlink(userAvatarPath);
-                console.log('User avatar deleted successfully');
-            }
-        } catch (error) {
-            console.error('Failed to delete user avatar:', error);
-            throw new Error('Failed to delete user avatar');
-        }
-    };
+    // 移除用户头像相关方法 - 现在只支持管理员管理的默认头像
+    // storeUserAvatar、getUserAvatar、deleteUserAvatar 方法已删除
     
     // 创建占位符头像（简单的base64图片）
     private createPlaceholderAvatar = (): string => {

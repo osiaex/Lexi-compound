@@ -68,7 +68,6 @@ export const defaultExperiment = {
         streamMessage: false,
         sadTalker: {
             enabled: false,
-            customAvatar: false,
             autoPlay: true,
             ttsService: 'edgetts',
             edgeTtsVoice: 'zh-CN-XiaoxiaoNeural',
