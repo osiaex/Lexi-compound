@@ -7,11 +7,12 @@ const serialize = (obj) =>
         .map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(obj[key])}`)
         .join('&');
 
-export const sendMessage = async (message: MessageType, conversationId: string): Promise<MessageType> => {
+export const sendMessage = async (message: MessageType, conversationId: string, experimentFeatures?: any): Promise<MessageType> => {
     try {
         const response = await axiosInstance.post(`/${ApiPaths.CONVERSATIONS_PATH}/message`, {
             message,
             conversationId,
+            experimentFeatures,
         });
         return response.data;
     } catch (error) {
@@ -25,11 +26,13 @@ export const sendStreamMessage = (
     onMessageReceived: (message: string) => void,
     onCloseStream: (message: MessageType) => void,
     onError: (error?: Event | { code: number; message: string }) => void,
+    experimentFeatures?: any,
 ) => {
+    const experimentFeaturesParam = experimentFeatures ? `&experimentFeatures=${encodeURIComponent(JSON.stringify(experimentFeatures))}` : '';
     const eventSource = new EventSource(
         `${process.env.REACT_APP_API_URL}/${ApiPaths.CONVERSATIONS_PATH}/message/stream?${serialize(
             message,
-        )}&conversationId=${conversationId}`,
+        )}&conversationId=${conversationId}${experimentFeaturesParam}`,
     );
 
     eventSource.addEventListener('close', (event) => {
