@@ -19,10 +19,20 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'PyLips'))
 try:
     from pylips.speech import RobotFace
     from pylips.face import FacePresets, ExpressionPresets
+    PYLIPS_AVAILABLE = True
 except ImportError as e:
     print(f"警告: PyLips模块导入失败: {e}")
-    print("请确保PyLips已正确安装")
+    print("将使用备用TTS功能")
     RobotFace = None
+    PYLIPS_AVAILABLE = False
+
+# 备用TTS实现
+try:
+    import pyttsx3
+    PYTTSX3_AVAILABLE = True
+except ImportError:
+    print("警告: pyttsx3不可用，TTS功能将受限")
+    PYTTSX3_AVAILABLE = False
 
 app = Flask(__name__)
 CORS(app, origins=["http://localhost:3000", "http://localhost:5000"])  # 允许前端和LEXI后端访问
@@ -39,6 +49,16 @@ class PyLipsService:
         self.face_server_running = False
         self.current_voice_id = None
         self.tts_method = 'system'
+        self.fallback_tts = None
+        
+        # 初始化备用TTS
+        if PYTTSX3_AVAILABLE and not PYLIPS_AVAILABLE:
+            try:
+                self.fallback_tts = pyttsx3.init()
+                logger.info("备用TTS引擎已初始化")
+            except Exception as e:
+                logger.error(f"初始化备用TTS失败: {e}")
+                self.fallback_tts = None
         
     def start_face_server(self):
         """启动PyLips面孔服务器"""
@@ -96,44 +116,66 @@ class PyLipsService:
     
     def speak(self, text, wait=False):
         """让机器人说话"""
-        if not self.face:
-            return False
-            
-        try:
-            self.face.say(text, wait=wait)
-            logger.info(f"机器人正在说话: {text[:50]}...")
-            return True
-            
-        except Exception as e:
-            logger.error(f"机器人说话失败: {e}")
-            return False
+        # 优先使用PyLips
+        if self.face:
+            try:
+                self.face.say(text, wait=wait)
+                logger.info(f"PyLips语音播放: {text[:50]}...")
+                return True
+            except Exception as e:
+                logger.error(f"PyLips语音播放失败: {e}")
+        
+        # 备用TTS
+        if self.fallback_tts:
+            try:
+                self.fallback_tts.say(text)
+                if wait:
+                    self.fallback_tts.runAndWait()
+                else:
+                    # 在新线程中运行以避免阻塞
+                    def speak_async():
+                        self.fallback_tts.runAndWait()
+                    threading.Thread(target=speak_async, daemon=True).start()
+                logger.info(f"备用TTS播放: {text[:50]}...")
+                return True
+            except Exception as e:
+                logger.error(f"备用TTS播放失败: {e}")
+        
+        logger.error("所有TTS方法都不可用")
+        return False
     
     def set_expression(self, expression_name, duration=1000):
         """设置面部表情"""
-        if not self.face:
-            return False
-            
-        try:
-            # 预定义表情映射
-            expressions = {
-                'happy': {'AU6l': 0.8, 'AU6r': 0.8, 'AU12l': 0.6, 'AU12r': 0.6},
-                'sad': {'AU1l': 0.5, 'AU1r': 0.5, 'AU4l': 0.4, 'AU4r': 0.4, 'AU15l': 0.3, 'AU15r': 0.3},
-                'surprised': {'AU1l': 0.8, 'AU1r': 0.8, 'AU2l': 0.6, 'AU2r': 0.6, 'AU5l': 0.7, 'AU5r': 0.7},
-                'angry': {'AU4l': 0.8, 'AU4r': 0.8, 'AU7l': 0.6, 'AU7r': 0.6, 'AU23l': 0.4, 'AU23r': 0.4},
-                'neutral': {}
-            }
-            
-            if expression_name in expressions:
-                self.face.express(expressions[expression_name], duration)
-                logger.info(f"设置表情: {expression_name}")
-                return True
-            else:
-                logger.warning(f"未知表情: {expression_name}")
-                return False
+        # 优先使用PyLips
+        if self.face:
+            try:
+                # 预定义表情映射
+                expressions = {
+                    'happy': {'AU6l': 0.8, 'AU6r': 0.8, 'AU12l': 0.6, 'AU12r': 0.6},
+                    'sad': {'AU1l': 0.5, 'AU1r': 0.5, 'AU4l': 0.4, 'AU4r': 0.4, 'AU15l': 0.3, 'AU15r': 0.3},
+                    'surprised': {'AU1l': 0.8, 'AU1r': 0.8, 'AU2l': 0.6, 'AU2r': 0.6, 'AU5l': 0.7, 'AU5r': 0.7},
+                    'angry': {'AU4l': 0.8, 'AU4r': 0.8, 'AU7l': 0.6, 'AU7r': 0.6, 'AU23l': 0.4, 'AU23r': 0.4},
+                    'neutral': {}
+                }
                 
-        except Exception as e:
-            logger.error(f"设置表情失败: {e}")
-            return False
+                if expression_name in expressions:
+                    self.face.express(expressions[expression_name], duration)
+                    logger.info(f"PyLips设置表情: {expression_name}")
+                    return True
+                else:
+                    logger.warning(f"未知表情: {expression_name}")
+                    return False
+                    
+            except Exception as e:
+                logger.error(f"PyLips设置表情失败: {e}")
+        
+        # 备用表情反馈（仅记录日志）
+        if not PYLIPS_AVAILABLE:
+            logger.info(f"备用表情模式 - 表情: {expression_name}, 持续时间: {duration}ms")
+            # 这里可以添加其他表情反馈机制，比如发送到前端显示文字表情
+            return True
+        
+        return False
     
     def look_at(self, x, y, z, duration=1000):
         """控制注视方向"""
@@ -349,4 +391,4 @@ if __name__ == '__main__':
     print("- GET /health - 健康检查")
     
     # 启动Flask应用
-    app.run(host='0.0.0.0', port=3001, debug=False) 
+    app.run(host='0.0.0.0', port=3001, debug=False)

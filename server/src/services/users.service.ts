@@ -1,13 +1,17 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import { UsersModel } from '../models/UsersModel';
 import { IAgent, IUser } from '../types';
 import { experimentsService } from './experiments.service';
 
 dotenv.config();
+
+interface CustomJwtPayload extends JwtPayload {
+    id: string;
+}
 
 class UsersService {
     createAdminUser = async (username: string, password: string): Promise<IUser> => {
@@ -87,7 +91,7 @@ class UsersService {
     };
 
     getActiveUser = async (token: string): Promise<{ user: IUser; newToken: string }> => {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY) as CustomJwtPayload;
         const user: IUser = await UsersModel.findOne({ _id: decoded.id }).lean();
 
         if (!user) throw Object.assign(new Error('User not found'), { status: 401 });

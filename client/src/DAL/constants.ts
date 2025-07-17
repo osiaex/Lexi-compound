@@ -92,6 +92,7 @@ export const AdminSections = {
     FORMS: 'forms',
     DATA: 'data',
     PYLIPS: 'pylips',
+    WHISPER: 'whisper',
     SETTINGS: 'settings',
 } as const;
 

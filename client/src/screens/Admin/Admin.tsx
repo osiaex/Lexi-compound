@@ -22,6 +22,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { DataPanel } from './components/data-panel/DataPanel';
 import { SettingsPanel } from './components/settings-panel/SettingsPanel';
 import PyLipsPanel from './components/pylips-panel/PyLipsPanel';
+import WhisperPanel from './components/whisper-panel/WhisperPanel';
 
 const Admin = () => {
     const [agents, setAgents] = useState<AgentType[]>([]);
@@ -70,6 +71,7 @@ const Admin = () => {
                             />
                             <Route path={AdminSections.DATA} element={<DataPanel />} />
                             <Route path={AdminSections.PYLIPS} element={<PyLipsPanel />} />
+                            <Route path={AdminSections.WHISPER} element={<WhisperPanel />} />
                             <Route path={AdminSections.SETTINGS} element={<SettingsPanel />} />
                         </Routes>
                     </SectionInnerContainer>

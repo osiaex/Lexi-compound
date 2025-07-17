@@ -8,6 +8,7 @@ import InsertChartOutlinedOutlinedIcon from '@mui/icons-material/InsertChartOutl
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import FaceIcon from '@mui/icons-material/Face';
+import MicIcon from '@mui/icons-material/Mic';
 import { Divider, List, ListItem, Typography } from '@mui/material';
 import { useDispatch } from 'react-redux';
 import { MainContainer, StyledListItemIcon } from './SideBar.s';
@@ -19,6 +20,7 @@ const sectionsConfig = [
     { id: AdminSections.FORMS, label: 'Forms', Icon: TextSnippetIcon },
     { id: AdminSections.DATA, label: 'Data', Icon: InsertChartOutlinedOutlinedIcon },
     { id: AdminSections.PYLIPS, label: 'PyLips', Icon: FaceIcon },
+    { id: AdminSections.WHISPER, label: 'Whisper', Icon: MicIcon },
     { id: AdminSections.SETTINGS, label: 'Settings', Icon: SettingsOutlinedIcon },
 ];
 

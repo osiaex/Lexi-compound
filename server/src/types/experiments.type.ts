@@ -23,6 +23,15 @@ export interface ExperimentFeatures {
     streamMessage: boolean;
 }
 
+export interface WhisperSettings {
+    enabled: boolean;
+    modelSize: 'tiny' | 'small';
+    language: 'zh' | 'en' | 'auto';
+    temperature: number;
+    maxFileSize: number;
+    maxDuration: number;
+}
+
 export interface IExperimentLean {
     _id: mongoose.Types.ObjectId;
     title: string;
@@ -47,4 +56,5 @@ export interface IExperiment {
     totalSessions: number;
     openSessions: number;
     experimentFeatures: ExperimentFeatures;
+    whisperSettings?: WhisperSettings;
 }

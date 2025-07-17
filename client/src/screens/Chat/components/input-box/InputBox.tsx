@@ -2,9 +2,12 @@ import { SnackbarStatus, useSnackbar } from '@contexts/SnackbarProvider';
 import { MessageType } from '@models/AppModels';
 import SendIcon from '@mui/icons-material/Send';
 import { Box, Button, IconButton } from '@mui/material';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { sendMessage, sendStreamMessage } from '../../../../DAL/server-requests/conversations';
 import { StyledInputBase, StyledInputBox } from './InputBox.s';
+import VoiceInputButton from '../../../../components/voice-input/VoiceInputButton';
+import { getWhisperConfig, WhisperConfig } from '../../../../DAL/server-requests/whisper';
+import { useExperimentId } from '../../../../hooks/useExperimentId';
 
 interface InputBoxProps {
     isMobile: boolean;
@@ -26,8 +29,31 @@ const InputBox: React.FC<InputBoxProps> = ({
     isStreamMessage,
 }) => {
     const { openSnackbar } = useSnackbar();
+    const experimentId = useExperimentId();
     const [message, setMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState(null);
+    const [whisperConfig, setWhisperConfig] = useState<WhisperConfig | null>(null);
+
+    // 获取 Whisper 配置
+    useEffect(() => {
+        const fetchWhisperConfig = async () => {
+            try {
+                const config = await getWhisperConfig(experimentId);
+                setWhisperConfig(config);
+            } catch (error) {
+                console.error('Failed to fetch Whisper config:', error);
+                // 只有在网络错误时才显示错误，配置不存在是正常情况
+                if (error.response?.status !== 404) {
+                    openSnackbar('无法获取语音配置，语音功能可能不可用', SnackbarStatus.WARNING);
+                }
+                setWhisperConfig(null);
+            }
+        };
+
+        if (experimentId) {
+            fetchWhisperConfig();
+        }
+    }, [experimentId, openSnackbar]);
 
     const handleSendMessage = async () => {
         if (!message && !errorMessage && !message.trim().length) {
@@ -107,6 +133,17 @@ const InputBox: React.FC<InputBoxProps> = ({
         }
     };
 
+    const handleVoiceTranscription = (transcribedText: string) => {
+        // 将转录文本添加到现有消息中，而不是替换
+        setMessage(prevMessage => {
+            const newMessage = prevMessage ? `${prevMessage} ${transcribedText}` : transcribedText;
+            return newMessage;
+        });
+        setErrorMessage(null);
+        // 显示成功提示
+        openSnackbar('语音转录完成，您可以编辑后发送', SnackbarStatus.SUCCESS);
+    };
+
     return (
         <Box
             style={{
@@ -140,9 +177,18 @@ const InputBox: React.FC<InputBoxProps> = ({
                         onKeyDown={handleKeyDown}
                         fontSize={fontSize === 'sm' ? '1rem' : '1.25rem'}
                     />
-                    <IconButton color="primary" onClick={handleSendMessage}>
-                        <SendIcon />
-                    </IconButton>
+                    <Box display="flex" alignItems="center">
+                        {whisperConfig?.enabled && (
+                            <VoiceInputButton
+                                onTranscriptionComplete={handleVoiceTranscription}
+                                disabled={false}
+                                experimentId={experimentId}
+                            />
+                        )}
+                        <IconButton color="primary" onClick={handleSendMessage}>
+                            <SendIcon />
+                        </IconButton>
+                    </Box>
                 </StyledInputBox>
             )}
         </Box>

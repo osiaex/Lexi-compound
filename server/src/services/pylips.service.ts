@@ -20,6 +20,7 @@ export interface PyLipsStatus {
 export interface PyLipsConfig {
     voice_id?: string;
     tts_method?: 'system' | 'polly';
+    wait?: boolean;
 }
 
 class PyLipsService {
@@ -28,6 +29,7 @@ class PyLipsService {
 
     constructor() {
         this.baseUrl = process.env.PYLIPS_SERVICE_URL || 'http://localhost:3001';
+        console.log('PyLips服务URL配置:', this.baseUrl);
     }
 
     /**
@@ -35,11 +37,23 @@ class PyLipsService {
      */
     async isServiceAvailable(): Promise<boolean> {
         try {
-            const response = await axios.get(`${this.baseUrl}/health`, { timeout: 5000 });
+            const response = await axios.get(`${this.baseUrl}/health`, { 
+                timeout: 3000,
+                validateStatus: (status) => status === 200
+            });
             this.isConnected = response.status === 200;
+            if (this.isConnected) {
+                console.log('✅ PyLips服务连接正常');
+            }
             return this.isConnected;
         } catch (error) {
-            console.warn('PyLips服务不可用:', error.message);
+            if (error.code === 'ECONNREFUSED') {
+                console.warn('⚠️ PyLips服务未启动或无法连接');
+            } else if (error.code === 'ETIMEDOUT') {
+                console.warn('⚠️ PyLips服务响应超时');
+            } else {
+                console.warn('⚠️ PyLips服务不可用:', error.message);
+            }
             this.isConnected = false;
             return false;
         }
@@ -50,23 +64,56 @@ class PyLipsService {
      */
     async startService(config?: PyLipsConfig): Promise<PyLipsResponse> {
         try {
+            if (!(await this.isServiceAvailable())) {
+                console.warn('⚠️ PyLips服务不可用，跳过启动');
+                return {
+                    success: false,
+                    message: 'PyLips服务不可用，无法启动'
+                };
+            }
+
+            const payload = {
+                voice_id: config?.voice_id || 'default',
+                tts_method: config?.tts_method || 'system',
+                ...config
+            };
+
+            console.log('🚀 正在启动PyLips服务...');
             const response: AxiosResponse<PyLipsResponse> = await axios.post(
                 `${this.baseUrl}/start`,
-                config || {},
-                { timeout: 15000 }
+                payload,
+                { 
+                    timeout: 15000,
+                    validateStatus: (status) => status >= 200 && status < 300
+                }
             );
             
             if (response.data.success) {
                 this.isConnected = true;
-                console.log('PyLips服务启动成功');
+                console.log('✅ PyLips服务启动成功');
+            } else {
+                console.warn('⚠️ PyLips服务启动返回失败状态:', response.data.message);
             }
             
             return response.data;
         } catch (error) {
-            console.error('启动PyLips服务失败:', error.message);
+            let errorMessage = '启动PyLips服务失败';
+            
+            if (error.code === 'ETIMEDOUT') {
+                errorMessage = 'PyLips服务启动超时';
+                console.error('❌ PyLips服务启动超时');
+            } else if (error.response) {
+                errorMessage = `PyLips服务启动失败: ${error.response.status} ${error.response.data?.message || error.response.statusText}`;
+                console.error('❌ PyLips服务启动失败:', error.response.status, error.response.data);
+            } else {
+                errorMessage = `启动PyLips服务时发生网络错误: ${error.message}`;
+                console.error('❌ 启动PyLips服务时发生网络错误:', error.message);
+            }
+            
+            this.isConnected = false;
             return {
                 success: false,
-                message: `启动PyLips服务失败: ${error.message}`
+                message: errorMessage
             };
         }
     }
@@ -76,44 +123,115 @@ class PyLipsService {
      */
     async stopService(): Promise<PyLipsResponse> {
         try {
-            const response: AxiosResponse<PyLipsResponse> = await axios.post(`${this.baseUrl}/stop`);
+            console.log('🛑 正在停止PyLips服务...');
+            const response: AxiosResponse<PyLipsResponse> = await axios.post(
+                `${this.baseUrl}/stop`,
+                {},
+                { 
+                    timeout: 10000,
+                    validateStatus: (status) => status >= 200 && status < 300
+                }
+            );
+            
             this.isConnected = false;
+            
+            if (response.data.success) {
+                console.log('✅ PyLips服务停止成功');
+            } else {
+                console.warn('⚠️ PyLips服务停止返回失败状态:', response.data.message);
+            }
+            
             return response.data;
         } catch (error) {
-            console.error('停止PyLips服务失败:', error.message);
+            let errorMessage = '停止PyLips服务失败';
+            
+            if (error.code === 'ETIMEDOUT') {
+                errorMessage = 'PyLips服务停止超时';
+                console.error('❌ PyLips服务停止超时');
+            } else if (error.response) {
+                errorMessage = `PyLips服务停止失败: ${error.response.status} ${error.response.data?.message || error.response.statusText}`;
+                console.error('❌ PyLips服务停止失败:', error.response.status, error.response.data);
+            } else if (error.code === 'ECONNREFUSED') {
+                errorMessage = 'PyLips服务连接被拒绝，可能已经停止';
+                console.warn('⚠️ PyLips服务连接被拒绝，可能已经停止');
+            } else {
+                errorMessage = `停止PyLips服务网络错误: ${error.message}`;
+                console.error('❌ 停止PyLips服务网络错误:', error.message);
+            }
+            
+            this.isConnected = false;
             return {
                 success: false,
-                message: `停止PyLips服务失败: ${error.message}`
+                message: errorMessage
             };
         }
     }
 
     /**
-     * 让AI说话
+     * 语音合成
      */
-    async speak(text: string, wait: boolean = false): Promise<PyLipsResponse> {
-        if (!this.isConnected) {
-            const available = await this.isServiceAvailable();
-            if (!available) {
+    async speak(text: string, config?: Partial<PyLipsConfig>): Promise<PyLipsResponse> {
+        try {
+            // 检查文本是否为空
+            if (!text || text.trim().length === 0) {
                 return {
                     success: false,
-                    message: 'PyLips服务不可用'
+                    message: '文本内容不能为空'
                 };
             }
-        }
 
-        try {
-            const response: AxiosResponse<PyLipsResponse> = await axios.post(`${this.baseUrl}/speak`, {
-                text,
-                wait
-            });
+            // 检查服务可用性
+            if (!this.isConnected && !(await this.isServiceAvailable())) {
+                console.warn('⚠️ PyLips服务不可用，语音合成将被跳过');
+                return {
+                    success: false,
+                    message: 'PyLips服务不可用，语音功能暂时无法使用'
+                };
+            }
+
+            const payload = { 
+                text: text.trim(), 
+                ...config 
+            };
+
+            console.log('🎤 正在进行语音合成...');
+            const response: AxiosResponse<PyLipsResponse> = await axios.post(
+                `${this.baseUrl}/speak`,
+                payload,
+                { 
+                    timeout: 30000,
+                    validateStatus: (status) => status >= 200 && status < 300
+                }
+            );
+            
+            if (response.data.success) {
+                console.log('✅ 语音合成完成');
+            } else {
+                console.warn('⚠️ 语音合成返回失败状态:', response.data.message);
+            }
             
             return response.data;
         } catch (error) {
-            console.error('PyLips语音播放失败:', error.message);
+            let errorMessage = '语音合成失败';
+            
+            if (error.code === 'ETIMEDOUT') {
+                errorMessage = '语音合成超时';
+                console.error('❌ 语音合成超时');
+            } else if (error.response) {
+                errorMessage = `语音合成失败: ${error.response.status} ${error.response.data?.message || error.response.statusText}`;
+                console.error('❌ 语音合成失败:', error.response.status, error.response.data);
+            } else if (error.code === 'ECONNREFUSED') {
+                errorMessage = 'PyLips服务连接被拒绝，请检查服务是否正常运行';
+                console.error('❌ PyLips服务连接被拒绝');
+                this.isConnected = false;
+            } else {
+                errorMessage = `语音合成网络错误: ${error.message}`;
+                console.error('❌ 语音合成网络错误:', error.message);
+            }
+            
             return {
                 success: false,
-                message: `语音播放失败: ${error.message}`
+                message: errorMessage
             };
         }
     }
@@ -122,25 +240,57 @@ class PyLipsService {
      * 设置面部表情
      */
     async setExpression(expression: 'happy' | 'sad' | 'surprised' | 'angry' | 'neutral', duration: number = 1000): Promise<PyLipsResponse> {
-        if (!this.isConnected) {
-            return {
-                success: false,
-                message: 'PyLips服务不可用'
-            };
-        }
-
         try {
-            const response: AxiosResponse<PyLipsResponse> = await axios.post(`${this.baseUrl}/expression`, {
-                expression,
-                duration
-            });
+            // 检查服务可用性
+            if (!this.isConnected && !(await this.isServiceAvailable())) {
+                console.warn('⚠️ PyLips服务不可用，表情设置将被跳过');
+                return {
+                    success: false,
+                    message: 'PyLips服务不可用，表情功能暂时无法使用'
+                };
+            }
+
+            console.log('😊 正在设置表情:', expression);
+            const response: AxiosResponse<PyLipsResponse> = await axios.post(
+                `${this.baseUrl}/expression`,
+                {
+                    expression,
+                    duration
+                },
+                { 
+                    timeout: 10000,
+                    validateStatus: (status) => status >= 200 && status < 300
+                }
+            );
+            
+            if (response.data.success) {
+                console.log('✅ 表情设置完成');
+            } else {
+                console.warn('⚠️ 表情设置返回失败状态:', response.data.message);
+            }
             
             return response.data;
         } catch (error) {
-            console.error('设置表情失败:', error.message);
+            let errorMessage = '设置表情失败';
+            
+            if (error.code === 'ETIMEDOUT') {
+                errorMessage = '设置表情超时';
+                console.error('❌ 设置表情超时');
+            } else if (error.response) {
+                errorMessage = `设置表情失败: ${error.response.status} ${error.response.data?.message || error.response.statusText}`;
+                console.error('❌ 设置表情失败:', error.response.status, error.response.data);
+            } else if (error.code === 'ECONNREFUSED') {
+                errorMessage = 'PyLips服务连接被拒绝';
+                console.error('❌ PyLips服务连接被拒绝');
+                this.isConnected = false;
+            } else {
+                errorMessage = `设置表情网络错误: ${error.message}`;
+                console.error('❌ 设置表情网络错误:', error.message);
+            }
+            
             return {
                 success: false,
-                message: `设置表情失败: ${error.message}`
+                message: errorMessage
             };
         }
     }
@@ -149,24 +299,56 @@ class PyLipsService {
      * 控制注视方向
      */
     async look(x: number, y: number, z: number, duration: number = 1000): Promise<PyLipsResponse> {
-        if (!this.isConnected) {
-            return {
-                success: false,
-                message: 'PyLips服务不可用'
-            };
-        }
-
         try {
-            const response: AxiosResponse<PyLipsResponse> = await axios.post(`${this.baseUrl}/look`, {
-                x, y, z, duration
-            });
+            // 检查服务可用性
+            if (!this.isConnected && !(await this.isServiceAvailable())) {
+                console.warn('⚠️ PyLips服务不可用，注视控制将被跳过');
+                return {
+                    success: false,
+                    message: 'PyLips服务不可用，注视功能暂时无法使用'
+                };
+            }
+
+            console.log('👀 正在控制注视方向:', { x, y, z, duration });
+            const response: AxiosResponse<PyLipsResponse> = await axios.post(
+                `${this.baseUrl}/look`,
+                {
+                    x, y, z, duration
+                },
+                { 
+                    timeout: 10000,
+                    validateStatus: (status) => status >= 200 && status < 300
+                }
+            );
+            
+            if (response.data.success) {
+                console.log('✅ 注视控制完成');
+            } else {
+                console.warn('⚠️ 注视控制返回失败状态:', response.data.message);
+            }
             
             return response.data;
         } catch (error) {
-            console.error('控制注视失败:', error.message);
+            let errorMessage = '控制注视失败';
+            
+            if (error.code === 'ETIMEDOUT') {
+                errorMessage = '控制注视超时';
+                console.error('❌ 控制注视超时');
+            } else if (error.response) {
+                errorMessage = `控制注视失败: ${error.response.status} ${error.response.data?.message || error.response.statusText}`;
+                console.error('❌ 控制注视失败:', error.response.status, error.response.data);
+            } else if (error.code === 'ECONNREFUSED') {
+                errorMessage = 'PyLips服务连接被拒绝';
+                console.error('❌ PyLips服务连接被拒绝');
+                this.isConnected = false;
+            } else {
+                errorMessage = `控制注视网络错误: ${error.message}`;
+                console.error('❌ 控制注视网络错误:', error.message);
+            }
+            
             return {
                 success: false,
-                message: `控制注视失败: ${error.message}`
+                message: errorMessage
             };
         }
     }
@@ -175,21 +357,54 @@ class PyLipsService {
      * 停止当前语音
      */
     async stopSpeech(): Promise<PyLipsResponse> {
-        if (!this.isConnected) {
-            return {
-                success: false,
-                message: 'PyLips服务不可用'
-            };
-        }
-
         try {
-            const response: AxiosResponse<PyLipsResponse> = await axios.post(`${this.baseUrl}/stop-speech`);
+            // 检查服务可用性
+            if (!this.isConnected && !(await this.isServiceAvailable())) {
+                console.warn('⚠️ PyLips服务不可用，停止语音将被跳过');
+                return {
+                    success: false,
+                    message: 'PyLips服务不可用，停止语音功能暂时无法使用'
+                };
+            }
+
+            console.log('🛑 正在停止语音播放...');
+            const response: AxiosResponse<PyLipsResponse> = await axios.post(
+                `${this.baseUrl}/stop-speech`,
+                {},
+                { 
+                    timeout: 5000,
+                    validateStatus: (status) => status >= 200 && status < 300
+                }
+            );
+            
+            if (response.data.success) {
+                console.log('✅ 语音停止完成');
+            } else {
+                console.warn('⚠️ 停止语音返回失败状态:', response.data.message);
+            }
+            
             return response.data;
         } catch (error) {
-            console.error('停止语音失败:', error.message);
+            let errorMessage = '停止语音失败';
+            
+            if (error.code === 'ETIMEDOUT') {
+                errorMessage = '停止语音超时';
+                console.error('❌ 停止语音超时');
+            } else if (error.response) {
+                errorMessage = `停止语音失败: ${error.response.status} ${error.response.data?.message || error.response.statusText}`;
+                console.error('❌ 停止语音失败:', error.response.status, error.response.data);
+            } else if (error.code === 'ECONNREFUSED') {
+                errorMessage = 'PyLips服务连接被拒绝';
+                console.error('❌ PyLips服务连接被拒绝');
+                this.isConnected = false;
+            } else {
+                errorMessage = `停止语音网络错误: ${error.message}`;
+                console.error('❌ 停止语音网络错误:', error.message);
+            }
+            
             return {
                 success: false,
-                message: `停止语音失败: ${error.message}`
+                message: errorMessage
             };
         }
     }
@@ -285,7 +500,7 @@ class PyLipsService {
             }
             
             // 然后播放语音
-            const result = await this.speak(text, wait);
+            const result = await this.speak(text, { wait });
             
             // 语音结束后回到中性表情
             if (expression !== 'neutral' && !wait) {
@@ -304,4 +519,4 @@ class PyLipsService {
     }
 }
 
-export const pylipsService = new PyLipsService(); 
+export const pylipsService = new PyLipsService();
