@@ -5,12 +5,16 @@ import { ListItemText, StyledListItemIcon } from '../../../Admin/components/side
 import { StyledList, StyledListItem } from './SideBarChat.s';
 
 interface SidebarProps {
-    setIsOpen;
-    setMessageFontSize;
-    messageFontSize;
+    setIsOpen: (open: boolean) => void;
+    setMessageFontSize: (size: 'sm' | 'lg') => void;
+    messageFontSize: 'sm' | 'lg';
 }
 
-export const SidebarChat: React.FC<SidebarProps> = ({ setIsOpen, messageFontSize, setMessageFontSize }) => (
+export const SidebarChat: React.FC<SidebarProps> = ({ 
+    setIsOpen, 
+    messageFontSize, 
+    setMessageFontSize
+}) => (
     <StyledList>
         <Box>
             <StyledListItem onClick={() => setIsOpen(true)}>
@@ -25,8 +29,9 @@ export const SidebarChat: React.FC<SidebarProps> = ({ setIsOpen, messageFontSize
                 </ListItemText>
             </ListItem>
         </Box>
+        
         <Box paddingLeft={'16px'}>
-            <ListItemText width={'80%'} textAlign={'left'}>
+            <ListItemText width={'80%'} textAlign={'left'} sx={{ fontSize: '0.875rem' }}>
                 Font Size:
             </ListItemText>
             <FontSizeSwitch fontSize={messageFontSize} setFontSize={setMessageFontSize} />

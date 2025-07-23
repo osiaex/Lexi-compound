@@ -6,10 +6,10 @@ import { requestHandler } from '../utils/requestHandler';
 class ConvesationsController {
     message = requestHandler(
         async (req: Request, res: Response) => {
-            const { message, conversationId }: { message: any; conversationId: string } = req.body;
+            const { message, conversationId, experimentFeatures }: { message: any; conversationId: string; experimentFeatures?: any } = req.body;
             this.validateMessage(message.content);
 
-            const savedResponse = await conversationsService.message(message, conversationId);
+            const savedResponse = await conversationsService.message(message, conversationId, undefined, experimentFeatures);
             res.status(200).send(savedResponse);
         },
         (req, res, error) => {
@@ -30,6 +30,7 @@ class ConvesationsController {
             const conversationId = req.query.conversationId as string;
             const role = req.query.role as string;
             const content = req.query.content as string;
+            const experimentFeatures = req.query.experimentFeatures ? JSON.parse(req.query.experimentFeatures as string) : undefined;
             const message = { role, content };
             this.validateMessage(message.content);
 
@@ -48,7 +49,7 @@ class ConvesationsController {
                 res.end();
             };
 
-            const savedResponse = await conversationsService.message(message, conversationId, streamResponse);
+            const savedResponse = await conversationsService.message(message, conversationId, streamResponse, experimentFeatures);
             closeStream(savedResponse);
         },
         (req, res, error) => {

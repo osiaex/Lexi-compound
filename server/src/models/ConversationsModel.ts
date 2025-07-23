@@ -11,6 +11,7 @@ export const conversationSchema = new Schema<IConversation>(
         timestamp: { type: Number, default: () => Date.now() },
         messageNumber: { type: Number, required: true },
         userAnnotation: { type: Number, default: () => 0 },
+        talkingVideo: { type: String },
     },
     { versionKey: false },
 );

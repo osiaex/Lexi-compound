@@ -1,8 +1,8 @@
-import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
+import path from 'path';
 import { mongoDbProvider } from './mongoDBProvider';
 import { agentsRouter } from './routers/agentsRouter.router';
 import { conversationsRouter } from './routers/conversationsRouter.router';
@@ -10,8 +10,12 @@ import { dataAggregationRouter } from './routers/dataAggregationRouter.router';
 import { experimentsRouter } from './routers/experimentsRouter.router';
 import { formsRouter } from './routers/formsRouter';
 import { usersRouter } from './routers/usersRouter.router';
+<<<<<<< HEAD
 import { pylipsRouter } from './routers/pylipsRouter.router';
 import { whisperRouter } from './routers/whisperRouter.router';
+=======
+import { sadTalkerRouter } from './routers/sadtalkerRouter.router';
+>>>>>>> 399a6bc00e2a6010e154a1560a20838e0d7632ea
 import { usersService } from './services/users.service';
 
 dotenv.config();
@@ -43,13 +47,19 @@ const createAdminUser = async (username: string, password: string) => {
 
 const setupServer = async () => {
     const app = express();
-    app.use(bodyParser.json());
+    // 增加请求体大小限制以支持头像上传 (50MB)
+    app.use(express.json({ limit: '50mb' }));
+    app.use(express.urlencoded({ limit: '50mb', extended: true }));
     const corsOptions = {
         origin: process.env.FRONTEND_URL,
         credentials: true,
     };
     app.use(cors(corsOptions));
     app.use(cookieParser());
+
+    // 添加静态文件服务，提供上传的头像文件
+    const uploadsPath = path.join(process.cwd(), 'uploads');
+    app.use('/uploads', express.static(uploadsPath));
 
     const PORT = process.env.PORT || 5000;
     
@@ -69,8 +79,12 @@ const setupServer = async () => {
     app.use('/agents', agentsRouter());
     app.use('/dataAggregation', dataAggregationRouter());
     app.use('/forms', formsRouter());
+<<<<<<< HEAD
     app.use('/pylips', pylipsRouter());
     app.use('/whisper', whisperRouter());
+=======
+    app.use('/sadtalker', sadTalkerRouter());
+>>>>>>> 399a6bc00e2a6010e154a1560a20838e0d7632ea
 
     app.listen(PORT, () => {
         console.log(`Server started on http://localhost:${PORT}`);

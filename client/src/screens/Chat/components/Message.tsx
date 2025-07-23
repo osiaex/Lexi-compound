@@ -1,7 +1,8 @@
 import { Box, Typography } from '@mui/material';
 import theme from '@root/Theme';
-import { MessageType } from '@root/models/AppModels';
+import { MessageType, ExperimentFeatures } from '@root/models/AppModels';
 import UserAnnotation from './UserAnnotation';
+import TalkingVideoPlayer from './TalkingVideoPlayer';
 
 interface MessageProps {
     message: MessageType;
@@ -9,6 +10,7 @@ interface MessageProps {
     size?: 'sm' | 'lg';
     experimentHasUserAnnotation: boolean;
     handleUpdateUserAnnotation: (messageId, userAnnotation) => void;
+    experimentFeatures?: ExperimentFeatures;
 }
 
 const Message: React.FC<MessageProps> = ({
@@ -17,8 +19,19 @@ const Message: React.FC<MessageProps> = ({
     message,
     role,
     handleUpdateUserAnnotation,
+    experimentFeatures,
 }) => {
     const isUser = role === 'user';
+    const hasTalkingVideo = message.talkingVideo && experimentFeatures?.sadTalker?.enabled && !isUser;
+    
+    // 调试信息
+    if (!isUser && experimentFeatures?.sadTalker?.enabled) {
+        console.log('Message component - SadTalker enabled:', {
+            hasVideo: !!message.talkingVideo,
+            videoLength: message.talkingVideo?.length || 0,
+            messageId: message._id
+        });
+    }
 
     const getFormattedMessage = (content) => {
         const parts = content
@@ -40,6 +53,21 @@ const Message: React.FC<MessageProps> = ({
             }}
         >
             <Box display={'flex'} flexDirection={'column'}>
+                {/* 如果是AI消息且有说话视频，显示视频 */}
+                {hasTalkingVideo && (
+                    <Box sx={{ 
+                        marginBottom: 1, 
+                        float: 'left',
+                        display: 'flex',
+                        justifyContent: 'flex-start'
+                    }}>
+                        <TalkingVideoPlayer
+                            videoBase64={message.talkingVideo}
+                            autoPlay={experimentFeatures.sadTalker.autoPlay}
+                        />
+                    </Box>
+                )}
+                
                 <Box
                     sx={{
                         marginBottom: 1,
