@@ -42,7 +42,7 @@ export const ConversationForm: React.FC<FinalRegisterFormProps> = ({ form, isPre
             handleDone();
             await updateConversationMetadata(conversationId, data, isPreConversation);
         } catch (err) {
-            console.log("Couldn't Save Conversation Metadata");
+            // 静默处理元数据保存错误，不影响用户体验
         }
     };
 

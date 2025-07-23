@@ -7,6 +7,7 @@ import PauseIcon from '@mui/icons-material/Pause';
 import StopIcon from '@mui/icons-material/Stop';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { styled } from '@mui/material/styles';
+import { SnackbarStatus, useSnackbar } from '@contexts/SnackbarProvider';
 
 const RecorderContainer = styled(Box)(({ theme }) => ({
     display: 'flex',
@@ -52,6 +53,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
     maxDuration = 300, // 默认5分钟
     disabled = false,
 }) => {
+    const { openSnackbar } = useSnackbar();
     const [isRecording, setIsRecording] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
     const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
@@ -150,15 +152,13 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
                 // 检查blob数据完整性
                 if (blob.size === 0) {
                     console.error('Recording failed: empty audio blob');
-                    alert('录音失败：音频数据为空，请重试');
+                    openSnackbar('录音失败：音频数据为空，请重试', SnackbarStatus.ERROR);
                     return;
                 }
                 
                 if (blob.size < 1000) { // 小于1KB可能是无效录音
                     console.warn('Recording may be invalid: very small audio blob');
-                    if (!confirm('录音时间很短，是否继续使用？')) {
-                        return;
-                    }
+                    openSnackbar('录音时间很短，音频质量可能不佳', SnackbarStatus.WARNING);
                 }
                 
                 setAudioBlob(blob);
@@ -206,7 +206,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
                 }
             }
             
-            alert(errorMessage);
+            openSnackbar(errorMessage, SnackbarStatus.ERROR);
         }
     };
 
@@ -411,4 +411,4 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
     );
 };
 
-export default VoiceRecorder; 
+export default VoiceRecorder;

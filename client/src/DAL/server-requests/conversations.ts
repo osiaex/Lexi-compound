@@ -33,7 +33,6 @@ export const sendStreamMessage = (
     );
 
     eventSource.addEventListener('close', (event) => {
-        console.log('Server is closing the connection.');
         const message = JSON.parse(event.data);
         onCloseStream(message);
         eventSource.close();
@@ -58,9 +57,7 @@ export const sendStreamMessage = (
     };
 
     eventSource.onerror = (error) => {
-        if (eventSource.readyState === EventSource.CLOSED) {
-            console.log('Connection was closed normally.');
-        } else if (onError) {
+        if (eventSource.readyState !== EventSource.CLOSED && onError) {
             onError(error);
         }
         eventSource.close();

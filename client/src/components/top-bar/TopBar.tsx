@@ -96,6 +96,14 @@ const TopBar: React.FC<TopBarProps> = (props) => {
                                 >
                                     Admin Panel
                                 </MenuItem>
+                                <MenuItem
+                                    onClick={() => {
+                                        handleClose();
+                                        navigate(Pages.SYSTEM_MANAGEMENT);
+                                    }}
+                                >
+                                    System Management
+                                </MenuItem>
                                 <MenuItem onClick={handleLogout} style={{ color: 'red' }}>
                                     Logout
                                 </MenuItem>

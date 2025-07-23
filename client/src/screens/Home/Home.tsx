@@ -52,7 +52,7 @@ const Home: React.FC = () => {
                     try {
                         await logout();
                     } catch (err) {
-                        console.log(err);
+                        // 静默处理登出错误
                     }
                     navigate(Pages.PROJECT_OVERVIEW);
                     dispatch(setActiveUser(null));

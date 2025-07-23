@@ -1,5 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Box, Typography, Button } from '@mui/material';
+import { Box, Container } from '@mui/material';
+import ErrorRecovery from './ErrorRecovery';
 
 interface Props {
     children: ReactNode;
@@ -37,32 +38,36 @@ class ErrorBoundary extends Component<Props, State> {
         window.location.reload();
     };
 
+    private handleReset = () => {
+        this.setState({ hasError: false, error: undefined });
+    };
+
     public render() {
         if (this.state.hasError) {
             return (
-                <Box
-                    display="flex"
-                    flexDirection="column"
-                    alignItems="center"
-                    justifyContent="center"
-                    minHeight="200px"
-                    padding={3}
-                >
-                    <Typography variant="h6" color="error" gutterBottom>
-                        出现了一个错误
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary" gutterBottom>
-                        请尝试刷新页面，如果问题持续存在，请联系管理员。
-                    </Typography>
-                    <Button 
-                        variant="contained" 
-                        color="primary" 
-                        onClick={this.handleReload}
-                        sx={{ mt: 2 }}
+                <Container maxWidth="md" sx={{ py: 4 }}>
+                    <Box 
+                        sx={{ 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            minHeight: '50vh'
+                        }}
                     >
-                        刷新页面
-                    </Button>
-                </Box>
+                        <ErrorRecovery
+                            error={this.state.error}
+                            title="页面出现错误"
+                            message="抱歉，页面遇到了一些问题。请尝试以下解决方案，如果问题持续存在，请联系技术支持。"
+                            onRetry={() => window.location.reload()}
+                            onReset={this.handleReset}
+                            retryText="刷新页面"
+                            resetText="重置状态"
+                            showReportButton={true}
+                            showDetails={true}
+                        />
+                    </Box>
+                </Container>
             );
         }
 
@@ -70,4 +75,4 @@ class ErrorBoundary extends Component<Props, State> {
     }
 }
 
-export default ErrorBoundary; 
+export default ErrorBoundary;

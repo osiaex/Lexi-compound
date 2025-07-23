@@ -1,6 +1,8 @@
 import LoadingPage from '@components/common/LoadingPage';
 import LoginExperimentRoute from '@components/common/LoginExperimentRoute';
 import PrivateExperimentRoute from '@components/common/ProtectedExperimentRoute';
+import ServiceStatusMonitor from '@components/common/ServiceStatusMonitor';
+import GlobalErrorHandler from '@components/common/GlobalErrorHandler';
 import useActiveUser from '@hooks/useActiveUser';
 import ProjectOverview from '@screens/Project-Overview/ProjectOverview';
 import React, { FC, Suspense, lazy, useState } from 'react';
@@ -9,6 +11,7 @@ import './styles.css';
 
 export const Pages = {
     PROJECT_OVERVIEW: '/project-overview',
+    SYSTEM_MANAGEMENT: '/system',
     ADMIN: '/admin',
     ADMIN_LOGIN: '/admin/login',
     EXPERIMENT: '/e/:experimentId',
@@ -24,15 +27,18 @@ const App: FC = () => {
     const Admin = lazy(() => import('@screens/Admin/Admin'));
     const ChatPage = lazy(() => import('@screens/Chat/ChatPage'));
     const Login = lazy(() => import('@screens/Login/Login'));
+    const SystemManagement = lazy(() => import('@screens/System/SystemManagement'));
     const TopBar = lazy(() => import('@components/top-bar/TopBar'));
 
     return (
         <BrowserRouter>
-            <Suspense fallback={<LoadingPage />}>
-                {isLoading ? (
-                    <LoadingPage />
-                ) : (
-                    <Routes>
+            <GlobalErrorHandler>
+                <ServiceStatusMonitor />
+                <Suspense fallback={<LoadingPage />}>
+                    {isLoading ? (
+                        <LoadingPage />
+                    ) : (
+                        <Routes>
                         <Route
                             path={Pages.PROJECT_OVERVIEW}
                             element={
@@ -40,6 +46,21 @@ const App: FC = () => {
                                     <TopBar setIsOpen={setOpenEndConversationDialog} />
                                     <ProjectOverview />
                                 </>
+                            }
+                        />
+                        
+                        {/* System Management Route */}
+                        <Route
+                            path={Pages.SYSTEM_MANAGEMENT}
+                            element={
+                                activeUser?.isAdmin ? (
+                                    <>
+                                        <TopBar setIsOpen={setOpenEndConversationDialog} />
+                                        <SystemManagement />
+                                    </>
+                                ) : (
+                                    <Navigate to={Pages.ADMIN_LOGIN} />
+                                )
                             }
                         />
 
@@ -98,9 +119,10 @@ const App: FC = () => {
                                 />
                             }
                         />
-                    </Routes>
-                )}
-            </Suspense>
+                        </Routes>
+                    )}
+                </Suspense>
+            </GlobalErrorHandler>
         </BrowserRouter>
     );
 };

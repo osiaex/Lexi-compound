@@ -6,11 +6,14 @@ import mongoose from 'mongoose';
 dotenv.config();
 
 class MongoDbProvider {
+    private isConnected: boolean = false;
+    private connectionPromise: Promise<void> | null = null;
+    
     constructor() {
         console.log('Create MongoDbProvider');
     }
 
-    private initializeConnection() {
+    private async initializeConnection(): Promise<void> {
         console.log('Connecting to MongoDB...');
         
         // 验证必需的环境变量
@@ -41,18 +44,35 @@ class MongoDbProvider {
                 });
                 
                 console.log('✅ Successfully connected to MongoDB');
+                this.isConnected = true;
                 
                 // 监听连接事件
                 mongoose.connection.on('error', (error) => {
                     console.error('❌ MongoDB connection error:', error);
+                    this.isConnected = false;
+                    // 如果是网络错误，尝试重连
+                    if (error.name === 'MongoNetworkError' || error.name === 'MongoTimeoutError') {
+                        console.log('🔄 Network error detected, will attempt reconnection...');
+                    }
                 });
                 
                 mongoose.connection.on('disconnected', () => {
                     console.warn('⚠️ MongoDB disconnected. Attempting to reconnect...');
+                    this.isConnected = false;
                 });
                 
                 mongoose.connection.on('reconnected', () => {
                     console.log('✅ MongoDB reconnected successfully');
+                    this.isConnected = true;
+                });
+                
+                mongoose.connection.on('connecting', () => {
+                    console.log('🔄 MongoDB connecting...');
+                });
+                
+                mongoose.connection.on('close', () => {
+                    console.warn('⚠️ MongoDB connection closed');
+                    this.isConnected = false;
                 });
                 
             } catch (error) {
@@ -63,19 +83,42 @@ class MongoDbProvider {
                     setTimeout(() => connectWithRetry(retryCount + 1), retryDelay);
                 } else {
                     console.error('💥 Failed to connect to MongoDB after maximum retries');
-                    throw new Error('Failed to connect to MongoDB after maximum retries');
+                    console.error('⚠️ Application will continue without database connection');
+                    this.isConnected = false;
+                    // 不抛出错误，允许应用程序继续运行
                 }
             }
         };
         
-        connectWithRetry();
+        await connectWithRetry();
     }
 
     public initialize() {
-        this.initializeConnection();
+        if (!this.connectionPromise) {
+            this.connectionPromise = this.initializeConnection();
+        }
+        return this.connectionPromise;
+    }
+    
+    public isConnectionReady(): boolean {
+        return this.isConnected && mongoose.connection.readyState === 1;
+    }
+    
+    public async waitForConnection(timeoutMs: number = 10000): Promise<boolean> {
+        const startTime = Date.now();
+        
+        while (!this.isConnectionReady() && (Date.now() - startTime) < timeoutMs) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        return this.isConnectionReady();
     }
 
     public getModel<T>(modelName: string, schema: mongoose.Schema<T>): mongoose.Model<T> {
+        if (!this.isConnectionReady()) {
+            console.warn(`⚠️ Attempting to get model '${modelName}' without active database connection`);
+        }
+        
         if (mongoose.models[modelName]) {
             return mongoose.model<T>(modelName);
         }

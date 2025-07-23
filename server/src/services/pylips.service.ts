@@ -24,12 +24,69 @@ export interface PyLipsConfig {
 }
 
 class PyLipsService {
-    private readonly baseUrl: string;
+    private baseUrl: string;
     private isConnected: boolean = false;
+    private healthCheckInterval: NodeJS.Timeout | null = null;
+    private reconnectAttempts: number = 0;
+    private maxReconnectAttempts: number = 5;
 
     constructor() {
         this.baseUrl = process.env.PYLIPS_SERVICE_URL || 'http://localhost:3001';
-        console.log('PyLips服务URL配置:', this.baseUrl);
+        console.log('PyLips服务初始化，服务地址:', this.baseUrl);
+        
+        // 启动健康检查
+        this.startHealthCheck();
+    }
+
+    /**
+     * 启动定期健康检查
+     */
+    private startHealthCheck(): void {
+        // 每30秒检查一次服务状态
+        this.healthCheckInterval = setInterval(async () => {
+            const wasConnected = this.isConnected;
+            const isNowConnected = await this.isServiceAvailable();
+            
+            if (wasConnected && !isNowConnected) {
+                console.warn('⚠️ PyLips服务连接丢失，开始重连...');
+                this.attemptReconnect();
+            } else if (!wasConnected && isNowConnected) {
+                console.log('✅ PyLips服务重新连接成功');
+                this.reconnectAttempts = 0;
+            }
+        }, 30000);
+    }
+
+    /**
+     * 尝试重新连接
+     */
+    private async attemptReconnect(): Promise<void> {
+        if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+            console.error('❌ PyLips服务重连次数已达上限，停止重连');
+            return;
+        }
+
+        this.reconnectAttempts++;
+        const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
+        
+        console.log(`🔄 第${this.reconnectAttempts}次重连PyLips服务，${delay/1000}秒后重试...`);
+        
+        setTimeout(async () => {
+            const isConnected = await this.isServiceAvailable();
+            if (!isConnected && this.reconnectAttempts < this.maxReconnectAttempts) {
+                this.attemptReconnect();
+            }
+        }, delay);
+    }
+
+    /**
+     * 停止健康检查
+     */
+    public stopHealthCheck(): void {
+        if (this.healthCheckInterval) {
+            clearInterval(this.healthCheckInterval);
+            this.healthCheckInterval = null;
+        }
     }
 
     /**

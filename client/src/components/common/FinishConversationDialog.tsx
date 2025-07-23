@@ -7,6 +7,8 @@ import {
     DialogContentText,
     DialogTitle,
     useMediaQuery,
+    Alert,
+    Snackbar,
 } from '@mui/material';
 import theme from '@root/Theme';
 import { useState } from 'react';
@@ -19,6 +21,8 @@ import { ConversationForm } from '../forms/conversation-form/ConversationForm';
 
 const FinishConversationDialog = ({ open, setIsOpen, questionnaireLink, form }) => {
     const [page, setPage] = useState(1);
+    const [error, setError] = useState('');
+    const [showError, setShowError] = useState(false);
     const { activeUser } = useActiveUser();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const experimentId = useExperimentId();
@@ -42,9 +46,10 @@ const FinishConversationDialog = ({ open, setIsOpen, questionnaireLink, form }) 
         try {
             await finishConversation(conversationId, experimentId, activeUser.isAdmin);
         } catch (error) {
-            console.error('Failed to finish conversation');
+            setError('Failed to finish conversation. Please try again.');
+            setShowError(true);
+            return; // 阻止继续执行
         }
-        console.log('Finish Conversation');
     };
 
     const handleDoneSurvey = async () => {
@@ -98,6 +103,20 @@ const FinishConversationDialog = ({ open, setIsOpen, questionnaireLink, form }) 
                     )}
                 </>
             ) : null}
+            <Snackbar 
+                open={showError} 
+                autoHideDuration={6000} 
+                onClose={() => setShowError(false)}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            >
+                <Alert 
+                    onClose={() => setShowError(false)} 
+                    severity="error" 
+                    sx={{ width: '100%' }}
+                >
+                    {error}
+                </Alert>
+            </Snackbar>
         </Dialog>
     );
 };
