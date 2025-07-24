@@ -8,8 +8,7 @@ import {
     Button, 
     Typography,
     Box,
-    CircularProgress,
-    Tooltip
+    CircularProgress
 } from '@mui/material';
 import MicIcon from '@mui/icons-material/Mic';
 import VoiceRecorder from './VoiceRecorder';
@@ -176,7 +175,6 @@ const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
             recorder.start();
             setMediaRecorder(recorder);
             setIsDirectRecording(true);
-            openSnackbar('开始录音，再次点击停止', SnackbarStatus.INFO);
         } catch (error) {
             console.error('Failed to start recording:', error);
             openSnackbar('无法访问麦克风，请检查权限设置', SnackbarStatus.ERROR);
@@ -210,20 +208,18 @@ const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
 
     return (
         <>
-            <Tooltip title={voiceInputMode === 'direct' ? (isDirectRecording ? '停止录音' : '开始录音') : '语音输入'}>
-                <IconButton
-                    color={isDirectRecording ? 'secondary' : 'primary'}
-                    onClick={handleButtonClick}
-                    disabled={disabled || isTranscribing}
-                    size="medium"
-                >
-                    {isTranscribing ? (
-                        <CircularProgress size={24} />
-                    ) : (
-                        <MicIcon />
-                    )}
-                </IconButton>
-            </Tooltip>
+            <IconButton
+                color={isDirectRecording ? 'secondary' : 'primary'}
+                onClick={handleButtonClick}
+                disabled={disabled || isTranscribing}
+                size="medium"
+            >
+                {isTranscribing ? (
+                    <CircularProgress size={24} />
+                ) : (
+                    <MicIcon />
+                )}
+            </IconButton>
 
             <Dialog
                 open={isDialogOpen}
