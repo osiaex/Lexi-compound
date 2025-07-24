@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import { OpenAI } from 'openai';
@@ -8,6 +7,9 @@ import { MetadataConversationsModel } from '../models/MetadataConversationsModel
 import { experimentsService } from './experiments.service';
 import { usersService } from './users.service';
 import { pylipsService } from './pylips.service';
+import edgeTtsService from './edgeTts.service';
+import { sadTalkerService } from './sadtalker.service';
+import { ttsService } from './tts.service';
 
 dotenv.config();
 
@@ -144,135 +146,7 @@ class ConversationsService {
         return conversation;
     };
 
-    updateConversationSurveysData = async (conversationId: string, data, isPreConversation: boolean) => {
-        const saveField = isPreConversation ? { preConversation: data } : { postConversation: data };
-        const res = await this.updateConversationMetadata(conversationId, saveField);
-
-        return res;
-    };
-
-    getConversationMetadata = async (conversationId: string): Promise<any> => {
-        const res = await MetadataConversationsModel.findOne({ _id: new mongoose.Types.ObjectId(conversationId) });
-        return res;
-    };
-
-    getUserConversations = async (userId: string): Promise<any> => {
-        const conversations = [];
-        const metadataConversations = await MetadataConversationsModel.find({ userId }, { agent: 0 }).lean();
-
-        for (const metadataConversation of metadataConversations) {
-            const conversation = await ConversationsModel.find({
-                conversationId: metadataConversation._id,
-            }).lean();
-            conversations.push({
-                metadata: metadataConversation,
-                conversation,
-            });
-        }
-
-        return conversations;
-    };
-
-    finishConversation = async (conversationId: string, experimentId: string, isAdmin: boolean): Promise<void> => {
-        const res = await MetadataConversationsModel.updateOne(
-            { _id: new mongoose.Types.ObjectId(conversationId) },
-            { $set: { isFinished: true } },
-        );
-
-        if (res.modifiedCount && !isAdmin) {
-            await experimentsService.closeSession(experimentId);
-        }
-    };
-
-    deleteExperimentConversations = async (experimentId: string): Promise<void> => {
-        const conversationIds = await this.getExperimentConversationsIds(experimentId);
-        await Promise.all([
-            MetadataConversationsModel.deleteMany({ _id: { $in: conversationIds.ids } }),
-            ConversationsModel.deleteMany({ conversationId: { $in: conversationIds.strIds } }),
-        ]);
-    };
-
-    updateUserAnnotation = async (messageId: string, userAnnotation: UserAnnotation): Promise<Message> => {
-        const message: Message = await ConversationsModel.findOneAndUpdate(
-            { _id: messageId },
-            { $set: { userAnnotation } },
-            { new: true },
-        );
-
-        return message;
-    };
-
-    private updateConversationMetadata = async (conversationId, fields) => {
-        try {
-            const res = await MetadataConversationsModel.updateOne(
-                { _id: new mongoose.Types.ObjectId(conversationId) },
-                fields,
-            );
-            return res;
-        } catch (error) {
-            console.error(`updateConversationMetadata - ${error}`);
-        }
-    };
-
-    private getConversationMessages = (agent: IAgent, conversation: Message[], message: Message) => {
-        const systemPrompt = { role: 'system', content: agent.systemStarterPrompt };
-        const beforeUserMessage = { role: 'system', content: agent.beforeUserSentencePrompt };
-        const afterUserMessage = { role: 'system', content: agent.afterUserSentencePrompt };
-
-        const messages = [
-            systemPrompt,
-            ...conversation,
-            beforeUserMessage,
-            message,
-            afterUserMessage,
-            { role: 'assistant', content: '' },
-        ];
-
-        return messages;
-    };
-
-    private createMessageDoc = async (
-        message: Message,
-        conversationId: string,
-        messageNumber: number,
-    ): Promise<Message> => {
-        const res = await ConversationsModel.create({
-            content: message.content,
-            role: message.role,
-            conversationId,
-            messageNumber,
-        });
-
-        return { _id: res._id, role: res.role, content: res.content, userAnnotation: res.userAnnotation };
-    };
-
-    private getChatRequest = (agent: IAgent, messages: Message[]) => {
-        const chatCompletionsReq = {
-            messages,
-            model: agent.model,
-        };
-
-        if (agent.maxTokens) chatCompletionsReq['max_tokens'] = agent.maxTokens;
-        if (agent.frequencyPenalty) chatCompletionsReq['frequency_penalty'] = agent.frequencyPenalty;
-        if (agent.topP) chatCompletionsReq['top_p'] = agent.topP;
-        if (agent.temperature) chatCompletionsReq['temperature'] = agent.temperature;
-        if (agent.presencePenalty) chatCompletionsReq['presence_penalty'] = agent.presencePenalty;
-        if (agent.stopSequences) chatCompletionsReq['stop'] = agent.stopSequences;
-
-        return chatCompletionsReq;
-    };
-
-    private getExperimentConversationsIds = async (
-        experimentId: string,
-    ): Promise<{ ids: mongoose.Types.ObjectId[]; strIds: string[] }> => {
-        const conversationsIds = await MetadataConversationsModel.aggregate([
-            { $match: { experimentId } },
-            { $project: { _id: 1, id: { $toString: '$_id' } } },
-            { $group: { _id: null, ids: { $push: '$_id' }, strIds: { $push: '$id' } } },
-            { $project: { _id: 0, ids: 1, strIds: 1 } },
-        ]);
-        return conversationsIds[0];
-    };
+    // 这些方法已在类的前面定义，此处删除重复定义
 
     /**
      * 触发PyLips语音响应（非阻塞）
@@ -287,173 +161,8 @@ class ConversationsService {
             console.warn('触发PyLips响应失败:', error.message);
         }
     };
-}
 
-export const conversationsService = new ConversationsService();
-=======
-import dotenv from 'dotenv';
-import mongoose from 'mongoose';
-import { OpenAI } from 'openai';
-import { IAgent, Message, UserAnnotation } from 'src/types';
-import { ConversationsModel } from '../models/ConversationsModel';
-import { MetadataConversationsModel } from '../models/MetadataConversationsModel';
-import { experimentsService } from './experiments.service';
-import { usersService } from './users.service';
-import { sadTalkerService } from './sadtalker.service';
-import { ttsService } from './tts.service';
-import edgeTtsService from './edgeTts.service';
-
-dotenv.config();
-
-const { API_PROVIDER, OPENAI_API_KEY, DEEPSEEK_API_KEY } = process.env;
-
-let aiClient: OpenAI;
-let apiProviderName: string;
-
-// 根据API_PROVIDER环境变量初始化相应的客户端
-if (API_PROVIDER === 'DeepSeek') {
-    if (!DEEPSEEK_API_KEY) throw new Error('Server is not configured with DeepSeek API key');
-    aiClient = new OpenAI({ 
-        apiKey: DEEPSEEK_API_KEY,
-        baseURL: 'https://api.deepseek.com'
-    });
-    apiProviderName = 'DeepSeek';
-} else {
-    // 默认使用OpenAI
-    if (!OPENAI_API_KEY) throw new Error('Server is not configured with OpenAI API key');
-    aiClient = new OpenAI({ 
-        apiKey: OPENAI_API_KEY
-    });
-    apiProviderName = 'OpenAI';
-}
-
-console.log(`🤖 AI Service initialized with ${apiProviderName} API`);
-
-class ConversationsService {
-    message = async (message, conversationId: string, streamResponse?, experimentFeatures?) => {
-        const [conversation, metadataConversation] = await Promise.all([
-            this.getConversation(conversationId, true),
-            this.getConversationMetadata(conversationId),
-        ]);
-
-        if (
-            metadataConversation.maxMessages &&
-            metadataConversation.messagesNumber + 1 > metadataConversation.maxMessages
-        ) {
-            const error = new Error('Message limit exceeded');
-            error['code'] = 403;
-            throw error;
-        }
-
-        const messages: any[] = this.getConversationMessages(metadataConversation.agent, conversation, message);
-        const chatRequest = this.getChatRequest(metadataConversation.agent, messages);
-        await this.createMessageDoc(message, conversationId, conversation.length + 1);
-
-        let assistantMessage = '';
-        let talkingVideoBase64 = '';
-
-        if (!streamResponse) {
-            const response = await aiClient.chat.completions.create(chatRequest);
-            assistantMessage = response.choices[0].message.content?.trim();
-            
-            // 如果启用了SadTalker，生成说话视频
-            if (experimentFeatures?.sadTalker?.enabled && assistantMessage) {
-                try {
-                    console.log('Generating talking video for message...');
-                    talkingVideoBase64 = await this.generateTalkingVideo(assistantMessage, conversationId, experimentFeatures);
-                } catch (error) {
-                    console.error('Failed to generate talking video:', error);
-                    // 即使视频生成失败，也要返回文本消息
-                }
-            }
-        } else {
-            const responseStream = await aiClient.chat.completions.create({ ...chatRequest, stream: true });
-            for await (const partialResponse of responseStream) {
-                const assistantMessagePart = partialResponse.choices[0]?.delta?.content || '';
-                await streamResponse(assistantMessagePart);
-                assistantMessage += assistantMessagePart;
-            }
-            
-            // 流式完成后生成视频
-            if (experimentFeatures?.sadTalker?.enabled && assistantMessage) {
-                try {
-                    console.log('Generating talking video for streamed message...');
-                    talkingVideoBase64 = await this.generateTalkingVideo(assistantMessage, conversationId, experimentFeatures);
-                } catch (error) {
-                    console.error('Failed to generate talking video:', error);
-                }
-            }
-        }
-
-        const savedMessage = await this.createMessageDoc(
-            {
-                content: assistantMessage,
-                role: 'assistant',
-                talkingVideo: talkingVideoBase64 || undefined,
-            },
-            conversationId,
-            conversation.length + 2,
-        );
-
-        this.updateConversationMetadata(conversationId, {
-            $inc: { messagesNumber: 1 },
-            $set: { lastMessageDate: new Date(), lastMessageTimestamp: Date.now() },
-        });
-
-        return savedMessage;
-    };
-
-    createConversation = async (userId: string, userConversationsNumber: number, experimentId: string) => {
-        let agent;
-        const [user, experimentBoundries] = await Promise.all([
-            usersService.getUserById(userId),
-            experimentsService.getExperimentBoundries(experimentId),
-        ]);
-
-        if (
-            !user.isAdmin &&
-            experimentBoundries.maxConversations &&
-            userConversationsNumber + 1 > experimentBoundries.maxConversations
-        ) {
-            const error = new Error('Conversations limit exceeded');
-            error['code'] = 403;
-            throw error;
-        }
-
-        if (user.isAdmin) {
-            agent = await experimentsService.getActiveAgent(experimentId);
-        }
-
-        const res = await MetadataConversationsModel.create({
-            conversationNumber: userConversationsNumber + 1,
-            experimentId,
-            userId,
-            agent: user.isAdmin ? agent : user.agent,
-            maxMessages: user.isAdmin ? undefined : experimentBoundries.maxMessages,
-        });
-
-        const firstMessage: Message = {
-            role: 'assistant',
-            content: user.isAdmin ? agent.firstChatSentence : user.agent.firstChatSentence,
-        };
-        await Promise.all([
-            this.createMessageDoc(firstMessage, res._id.toString(), 1),
-            usersService.addConversation(userId),
-            !user.isAdmin && experimentsService.addSession(experimentId),
-        ]);
-
-        return res._id.toString();
-    };
-
-    getConversation = async (conversationId: string, isLean = false): Promise<Message[]> => {
-        const returnValues = isLean
-            ? { _id: 0, role: 1, content: 1, talkingVideo: 1 }
-            : { _id: 1, role: 1, content: 1, userAnnotation: 1, talkingVideo: 1 };
-
-        const conversation = await ConversationsModel.find({ conversationId }, returnValues);
-
-        return conversation;
-    };
+    // 这些方法已在类的前面定义，此处删除重复定义
 
     updateConversationSurveysData = async (conversationId: string, data, isPreConversation: boolean) => {
         const saveField = isPreConversation ? { preConversation: data } : { postConversation: data };
@@ -686,4 +395,3 @@ class ConversationsService {
 }
 
 export const conversationsService = new ConversationsService();
->>>>>>> 399a6bc00e2a6010e154a1560a20838e0d7632ea

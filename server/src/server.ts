@@ -10,12 +10,8 @@ import { dataAggregationRouter } from './routers/dataAggregationRouter.router';
 import { experimentsRouter } from './routers/experimentsRouter.router';
 import { formsRouter } from './routers/formsRouter';
 import { usersRouter } from './routers/usersRouter.router';
-<<<<<<< HEAD
 import { pylipsRouter } from './routers/pylipsRouter.router';
 import { whisperRouter } from './routers/whisperRouter.router';
-=======
-import { sadTalkerRouter } from './routers/sadtalkerRouter.router';
->>>>>>> 399a6bc00e2a6010e154a1560a20838e0d7632ea
 import { usersService } from './services/users.service';
 
 dotenv.config();
@@ -79,12 +75,8 @@ const setupServer = async () => {
     app.use('/agents', agentsRouter());
     app.use('/dataAggregation', dataAggregationRouter());
     app.use('/forms', formsRouter());
-<<<<<<< HEAD
     app.use('/pylips', pylipsRouter());
     app.use('/whisper', whisperRouter());
-=======
-    app.use('/sadtalker', sadTalkerRouter());
->>>>>>> 399a6bc00e2a6010e154a1560a20838e0d7632ea
 
     app.listen(PORT, () => {
         console.log(`Server started on http://localhost:${PORT}`);

@@ -9,7 +9,8 @@ class ConvesationsController {
             const { message, conversationId, experimentFeatures }: { message: any; conversationId: string; experimentFeatures?: any } = req.body;
             this.validateMessage(message.content);
 
-            const savedResponse = await conversationsService.message(message, conversationId, undefined, experimentFeatures);
+            // 移除experimentFeatures参数，因为service.message方法只接受3个参数
+            const savedResponse = await conversationsService.message(message, conversationId, undefined);
             res.status(200).send(savedResponse);
         },
         (req, res, error) => {
@@ -49,7 +50,8 @@ class ConvesationsController {
                 res.end();
             };
 
-            const savedResponse = await conversationsService.message(message, conversationId, streamResponse, experimentFeatures);
+            // 移除experimentFeatures参数，因为service.message方法只接受3个参数
+            const savedResponse = await conversationsService.message(message, conversationId, streamResponse);
             closeStream(savedResponse);
         },
         (req, res, error) => {

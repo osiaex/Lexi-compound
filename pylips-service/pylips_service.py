@@ -38,7 +38,7 @@ app = Flask(__name__)
 CORS(app, origins=["http://localhost:3000", "http://localhost:5000"])  # 允许前端和LEXI后端访问
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# 配置日志
+# 配置日志  
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -51,8 +51,8 @@ class PyLipsService:
         self.tts_method = 'system'
         self.fallback_tts = None
         
-        # 初始化备用TTS
-        if PYTTSX3_AVAILABLE and not PYLIPS_AVAILABLE:
+        # 初始化备用TTS（始终尝试初始化）
+        if PYTTSX3_AVAILABLE:
             try:
                 self.fallback_tts = pyttsx3.init()
                 logger.info("备用TTS引擎已初始化")
@@ -73,14 +73,24 @@ class PyLipsService:
             
             self.face_server_process = subprocess.Popen([
                 sys.executable, '-m', 'pylips.face.start'
-            ], env=env, cwd=os.path.join(os.path.dirname(__file__), '..', '..', 'PyLips'))
+            ], env=env, cwd=os.path.join(os.path.dirname(__file__), '..', '..', 'PyLips'),
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             
             # 等待服务器启动
             time.sleep(3)
+            
+            # 检查进程是否仍在运行
+            if self.face_server_process.poll() is not None:
+                # 进程已退出，捕获输出
+                out, err = self.face_server_process.communicate()
+                logger.error(f"PyLips面孔服务器启动失败，已退出。输出: {out}\n错误: {err}")
+                self.face_server_running = False
+                return False
+                
             self.face_server_running = True
             logger.info("PyLips面孔服务器已启动")
             return True
-            
+                
         except Exception as e:
             logger.error(f"启动PyLips面孔服务器失败: {e}")
             return False
@@ -211,8 +221,9 @@ pylips_service = PyLipsService()
 @app.route('/health', methods=['GET'])
 def health_check():
     """健康检查"""
+    status = 'healthy' if pylips_service.face_server_running and pylips_service.face is not None else 'unavailable'
     return jsonify({
-        'status': 'healthy',
+        'status': status,
         'face_server_running': pylips_service.face_server_running,
         'face_initialized': pylips_service.face is not None
     })
@@ -234,7 +245,7 @@ def start_service():
             'success': True,
             'message': 'PyLips服务已启动',
             'face_initialized': face_init,
-            'face_url': 'http://localhost:8000/face'
+            'face_url': 'http://localhost:8000/face/LEXI'  # 添加robot_name
         })
     else:
         return jsonify({

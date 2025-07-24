@@ -17,11 +17,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-<<<<<<< HEAD
     "@types/jsonwebtoken": "^9.0.10",
-=======
-    "@types/multer": "^2.0.0",
->>>>>>> 399a6bc00e2a6010e154a1560a20838e0d7632ea
     "axios": "^1.5.1",
     "bcrypt": "^5.1.1",
     "body-parser": "^1.20.2",
@@ -34,11 +30,7 @@
     "fluent-ffmpeg": "^2.1.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^7.6.3",
-<<<<<<< HEAD
     "multer": "^1.4.5-lts.1",
-=======
-    "multer": "^2.0.1",
->>>>>>> 399a6bc00e2a6010e154a1560a20838e0d7632ea
     "nodemon": "^3.0.1",
     "openai": "^4.0.0",
     "redis": "^4.6.10",

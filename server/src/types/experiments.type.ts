@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import mongoose from 'mongoose';
 
 export interface ABAgents {
@@ -59,15 +58,6 @@ export interface IExperiment {
     experimentFeatures: ExperimentFeatures;
     whisperSettings?: WhisperSettings;
 }
-=======
-import mongoose from 'mongoose';
-
-export interface ABAgents {
-    agentA: string;
-    distA: number;
-    agentB: string;
-    distB: number;
-}
 
 export interface DisplaySettings {
     welcomeContent: string;
@@ -115,5 +105,5 @@ export interface IExperiment {
     totalSessions: number;
     openSessions: number;
     experimentFeatures: ExperimentFeatures;
+    whisperSettings?: WhisperSettings;
 }
->>>>>>> 399a6bc00e2a6010e154a1560a20838e0d7632ea
