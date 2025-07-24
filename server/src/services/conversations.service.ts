@@ -7,8 +7,6 @@ import { MetadataConversationsModel } from '../models/MetadataConversationsModel
 import { experimentsService } from './experiments.service';
 import { usersService } from './users.service';
 import { pylipsService } from './pylips.service';
-import edgeTtsService from './edgeTts.service';
-import { sadTalkerService } from './sadtalker.service';
 import { ttsService } from './tts.service';
 
 dotenv.config();
@@ -261,7 +259,7 @@ class ConversationsService {
             role: message.role,
             conversationId,
             messageNumber,
-            talkingVideo: message.talkingVideo,
+
         });
 
         return { 
@@ -269,98 +267,11 @@ class ConversationsService {
             role: res.role, 
             content: res.content, 
             userAnnotation: res.userAnnotation,
-            talkingVideo: res.talkingVideo 
+ 
         };
     };
 
-    // 生成说话视频
-    private generateTalkingVideo = async (text: string, conversationId: string, experimentFeatures?: any): Promise<string> => {
-        console.log('Starting video generation for conversation:', conversationId);
-        
-        try {
-            if (!await sadTalkerService.checkServiceHealth()) {
-                console.error('SadTalker service health check failed');
-                throw new Error('SadTalker service not available');
-            }
-            
-            // 只使用默认头像（管理员设置的头像）
-            console.log('Fetching default avatar...');
-            const defaultAvatarData = await sadTalkerService.getDefaultAvatar();
-            console.log('Default avatar data:', defaultAvatarData ? 'found' : 'not found');
-            
-            const avatarImage = defaultAvatarData ? defaultAvatarData.avatarBase64 : '';
-            
-            if (!avatarImage) {
-                console.error('No default avatar available for video generation');
-                throw new Error('No default avatar available - please contact administrator to set up default avatar');
-            }
-            
-            console.log('Avatar image length:', avatarImage.length);
-            
-            // 根据配置选择 TTS 服务
-            let audioBase64: string;
-            const ttsServiceType = experimentFeatures?.sadTalker?.ttsService || 'edgetts';
-            console.log('Using TTS service:', ttsServiceType);
-            
-            if (ttsServiceType === 'edgetts') {
-                // 使用 EdgeTTS
-                const edgeTtsVoice = experimentFeatures?.sadTalker?.edgeTtsVoice || 'zh-CN-XiaoxiaoNeural';
-                console.log(`Using EdgeTTS with voice: ${edgeTtsVoice}`);
-                
-                const audioBuffer = await edgeTtsService.generateSpeech(text, {
-                    voice: edgeTtsVoice,
-                    rate: '+0%',
-                    pitch: '+0Hz',
-                    volume: '+0%'
-                });
-                audioBase64 = audioBuffer.toString('base64');
-            } else {
-                // 使用 OpenAI TTS
-                if (!ttsService.isAvailable()) {
-                    // 如果 OpenAI 不可用，回退到 EdgeTTS
-                    console.log('OpenAI TTS not available, falling back to EdgeTTS');
-                    const audioBuffer = await edgeTtsService.generateSpeech(text, {
-                        voice: 'zh-CN-XiaoxiaoNeural'
-                    });
-                    audioBase64 = audioBuffer.toString('base64');
-                } else {
-                    console.log('Using OpenAI TTS');
-                    audioBase64 = await ttsService.textToSpeech(text);
-                }
-            }
-            
-            console.log('Audio generation completed, length:', audioBase64.length);
-            
-            // 生成说话视频
-            console.log('Starting SadTalker video generation...');
-            const videoBase64 = await sadTalkerService.generateTalkingVideo(
-                avatarImage,
-                audioBase64,
-                {
-                    enhancer: false, // 禁用gfpgan enhancer以避免依赖问题
-                    preprocess: 'crop',
-                    still: false,
-                    size: 256
-                }
-            );
-            
-            console.log('Video generation completed successfully, length:', videoBase64.length);
-            return videoBase64;
-            
-        } catch (error) {
-            console.error('Failed to generate talking video:', error);
-            console.error('Error details:', {
-                message: error.message,
-                stack: error.stack,
-                conversationId,
-                textLength: text.length
-            });
-            
-            // 不再抛出错误，而是返回空字符串，让消息仍然能够显示
-            // 这样用户仍然能看到文本消息，只是没有视频
-            return '';
-        }
-    };
+
     
     // 移除用户头像获取方法 - 统一使用默认头像
     // private getUserAvatar 方法已删除

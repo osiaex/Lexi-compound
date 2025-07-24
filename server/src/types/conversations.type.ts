@@ -10,7 +10,6 @@ export interface IConversation {
     timestamp: number;
     messageNumber: number;
     userAnnotation: UserAnnotation;
-    talkingVideo?: string;
 }
 
 export interface Message {
@@ -18,7 +17,6 @@ export interface Message {
     role: 'system' | 'user' | 'assistant';
     content: string;
     userAnnotation?: UserAnnotation;
-    talkingVideo?: string;
 }
 
 export interface IMetadataConversation {

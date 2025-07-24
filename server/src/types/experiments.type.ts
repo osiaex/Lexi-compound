@@ -32,32 +32,7 @@ export interface WhisperSettings {
     maxDuration: number;
 }
 
-export interface IExperimentLean {
-    _id: mongoose.Types.ObjectId;
-    title: string;
-}
 
-export interface IExperiment {
-    _id: mongoose.Types.ObjectId;
-    agentsMode: string;
-    activeAgent: string;
-    abAgents: ABAgents;
-    createdAt: Date;
-    timestamp: number;
-    displaySettings: DisplaySettings;
-    isActive: boolean;
-    title: string;
-    description: string;
-    numberOfParticipants: number;
-    experimentForms: ExperimentForms;
-    maxMessages: number;
-    maxConversations: number;
-    maxParticipants: number;
-    totalSessions: number;
-    openSessions: number;
-    experimentFeatures: ExperimentFeatures;
-    whisperSettings?: WhisperSettings;
-}
 
 export interface DisplaySettings {
     welcomeContent: string;
@@ -70,16 +45,7 @@ export interface ExperimentForms {
     postConversation: string;
 }
 
-export interface ExperimentFeatures {
-    userAnnotation: boolean;
-    streamMessage: boolean;
-    sadTalker: {
-        enabled: boolean;
-        autoPlay: boolean;
-        ttsService: 'openai' | 'edgetts';
-        edgeTtsVoice?: string;
-    };
-}
+
 
 export interface IExperimentLean {
     _id: mongoose.Types.ObjectId;

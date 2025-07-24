@@ -124,20 +124,6 @@ const ChatPage: React.FC<ChatPageProps> = ({ isFinishDialogOpen, setIsFinishDial
                             />
                         </MessageListContainer>
                         <Grid item display={'flex'} justifyContent={'center'} flexDirection="column" alignItems="center">
-                            {/* SadTalker视频功能信息提示 */}
-                            {experimentFeatures?.sadTalker?.enabled && (
-                                <Box sx={{ 
-                                    marginBottom: '8px', 
-                                    padding: '8px', 
-                                    backgroundColor: '#f0f9ff', 
-                                    borderRadius: '8px',
-                                    border: '1px solid #bfdbfe'
-                                }}>
-                                    <Typography variant="caption" color="primary.main" textAlign="center">
-                                        🎭 AI视频回复功能已启用 - AI回复时将自动生成说话视频
-                                    </Typography>
-                                </Box>
-                            )}
                             <InputBox
                                 isMobile={isMobile}
                                 messages={messages}
