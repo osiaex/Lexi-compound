@@ -203,6 +203,23 @@ const ExperimentForm = ({
                     )}
                 />
             </Box>
+            <FormControl
+                margin="dense"
+                size="small"
+                sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1, width: '100%' }}
+            >
+                <Typography>Voice Input Mode:</Typography>
+                <Controller
+                    name="experimentFeatures.voiceInputMode"
+                    control={control}
+                    render={({ field }) => (
+                        <Select {...field} labelId="voice-input-mode-select-label" style={{ minWidth: '150px' }}>
+                            <MenuItem value="dialog">Dialog Mode (Multi-click)</MenuItem>
+                            <MenuItem value="direct">Direct Mode (One-click)</MenuItem>
+                        </Select>
+                    )}
+                />
+            </FormControl>
 
             <Typography
                 style={{

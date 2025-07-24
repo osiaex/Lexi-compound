@@ -137,14 +137,44 @@ const InputBox: React.FC<InputBoxProps> = ({
     };
 
     const handleVoiceTranscription = (transcribedText: string) => {
-        // 将转录文本添加到现有消息中，而不是替换
-        setMessage(prevMessage => {
-            const newMessage = prevMessage ? `${prevMessage} ${transcribedText}` : transcribedText;
-            return newMessage;
-        });
-        setErrorMessage(null);
-        // 显示成功提示
-        openSnackbar('语音转录完成，您可以编辑后发送', SnackbarStatus.SUCCESS);
+        if (experimentFeatures?.voiceInputMode === 'direct') {
+            // 直接模式：立即发送消息
+            const conversation: MessageType[] = [...messages, { content: transcribedText, role: 'user' }];
+            setMessages(conversation);
+            setIsMessageLoading(true);
+            
+            const sendDirectMessage = async () => {
+                try {
+                    if (isStreamMessage) {
+                        sendStreamMessage(
+                            { content: transcribedText, role: 'user' },
+                            conversationId,
+                            onStreamMessage,
+                            onCloseStream,
+                            (error) => onMessageError(conversation, transcribedText, error),
+                            experimentFeatures,
+                        );
+                    } else {
+                        const response = await sendMessage({ content: transcribedText, role: 'user' }, conversationId, experimentFeatures);
+                        setMessages((prevMessages) => [...prevMessages, response]);
+                        setIsMessageLoading(false);
+                        setErrorMessage(null);
+                    }
+                } catch (err) {
+                    onMessageError(conversation, transcribedText, err);
+                }
+            };
+            
+            sendDirectMessage();
+        } else {
+            // 对话框模式：将转录文本添加到输入框
+            setMessage(prevMessage => {
+                const newMessage = prevMessage ? `${prevMessage} ${transcribedText}` : transcribedText;
+                return newMessage;
+            });
+            setErrorMessage(null);
+            openSnackbar('语音转录完成，您可以编辑后发送', SnackbarStatus.SUCCESS);
+        }
     };
 
     return (
@@ -186,6 +216,7 @@ const InputBox: React.FC<InputBoxProps> = ({
                                 onTranscriptionComplete={handleVoiceTranscription}
                                 disabled={false}
                                 experimentId={experimentId}
+                                voiceInputMode={experimentFeatures?.voiceInputMode || 'dialog'}
                             />
                         )}
                         <IconButton color="primary" onClick={handleSendMessage}>

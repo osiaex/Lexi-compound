@@ -1,6 +1,7 @@
 import { AdminSections } from '@DAL/constants';
 import { setActiveUser } from '@DAL/redux/reducers/activeUserReducer';
 import { logout } from '@DAL/server-requests/users';
+import { useLanguage } from '../../../../contexts/LanguageContext';
 import AutoAwesomeOutlinedIcon from '@mui/icons-material/AutoAwesomeOutlined';
 import BookOutlinedIcon from '@mui/icons-material/BookOutlined';
 import ExitToAppOutlinedIcon from '@mui/icons-material/ExitToAppOutlined';
@@ -13,22 +14,22 @@ import { Divider, List, ListItem, Typography } from '@mui/material';
 import { useDispatch } from 'react-redux';
 import { MainContainer, StyledListItemIcon } from './SideBar.s';
 import { StyledListItem } from './SideBarAdmin.s';
-
-const sectionsConfig = [
-    { id: AdminSections.EXPERIMENTS, label: 'Experiments', Icon: BookOutlinedIcon },
-    { id: AdminSections.AGENTS, label: 'Agents', Icon: AutoAwesomeOutlinedIcon },
-    { id: AdminSections.FORMS, label: 'Forms', Icon: TextSnippetIcon },
-    { id: AdminSections.DATA, label: 'Data', Icon: InsertChartOutlinedOutlinedIcon },
-    { id: AdminSections.PYLIPS, label: 'PyLips', Icon: FaceIcon },
-    { id: AdminSections.WHISPER, label: 'Whisper', Icon: MicIcon },
-    { id: AdminSections.SETTINGS, label: 'Settings', Icon: SettingsOutlinedIcon },
-];
-
 import { useNavigate } from 'react-router-dom';
 
 export const SidebarAdmin = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const { t } = useLanguage();
+
+    const sectionsConfig = [
+        { id: AdminSections.EXPERIMENTS, label: t('admin.sidebar.experiments'), Icon: BookOutlinedIcon },
+        { id: AdminSections.AGENTS, label: t('admin.sidebar.agents'), Icon: AutoAwesomeOutlinedIcon },
+        { id: AdminSections.FORMS, label: t('admin.sidebar.forms'), Icon: TextSnippetIcon },
+        { id: AdminSections.DATA, label: t('admin.sidebar.data'), Icon: InsertChartOutlinedOutlinedIcon },
+        { id: AdminSections.PYLIPS, label: t('admin.sidebar.pylips'), Icon: FaceIcon },
+        { id: AdminSections.WHISPER, label: t('admin.sidebar.whisper'), Icon: MicIcon },
+        { id: AdminSections.SETTINGS, label: t('admin.sidebar.settings'), Icon: SettingsOutlinedIcon },
+    ];
 
     const handleLogout = async () => {
         try {
@@ -66,7 +67,7 @@ export const SidebarAdmin = () => {
                 <StyledListItemIcon>
                     <ExitToAppOutlinedIcon style={{ color: 'floralwhite', fontSize: '1.25rem' }} />
                 </StyledListItemIcon>
-                <Typography color={'floralwhite'}>Logout</Typography>
+                <Typography color={'floralwhite'}>{t('admin.sidebar.logout')}</Typography>
             </ListItem>
         </MainContainer>
     );

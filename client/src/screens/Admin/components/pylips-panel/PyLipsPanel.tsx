@@ -30,6 +30,7 @@ import {
     Mood,
     RemoveRedEye,
 } from '@mui/icons-material';
+import { useLanguage } from '@contexts/LanguageContext';
 import { 
     checkPyLipsHealth,
     getPyLipsStatus,
@@ -46,10 +47,11 @@ import {
 } from '@DAL/server-requests/pylips';
 
 const PyLipsPanel: React.FC = () => {
+    const { t } = useLanguage();
     const [status, setStatus] = useState<PyLipsStatus | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string>('');
-    const [testText, setTestText] = useState('你好，我是LEXI数字人！');
+    const [testText, setTestText] = useState(t('pylips.defaultTestText'));
     const [config, setConfig] = useState<PyLipsConfig>({
         voice_id: undefined,
         tts_method: 'system'
@@ -76,7 +78,7 @@ const PyLipsPanel: React.FC = () => {
             setError('');
         } catch (err) {
             console.error('获取状态失败:', err);
-            setError('无法获取服务状态');
+            setError(t('pylips.errors.getStatusFailed'));
             setIsServiceHealthy(false);
             setStatus(null);
         }
@@ -91,10 +93,10 @@ const PyLipsPanel: React.FC = () => {
             if (result.success) {
                 await refreshStatus();
             } else {
-                setError(result.message || '启动服务失败');
+                setError(result.message || t('pylips.errors.startServiceFailed'));
             }
         } catch (err) {
-            setError('启动服务失败: ' + err.message);
+            setError(t('pylips.errors.startServiceFailed') + ': ' + err.message);
         } finally {
             setIsLoading(false);
         }
@@ -109,10 +111,10 @@ const PyLipsPanel: React.FC = () => {
             if (result.success) {
                 await refreshStatus();
             } else {
-                setError(result.message || '停止服务失败');
+                setError(result.message || t('pylips.errors.stopServiceFailed'));
             }
         } catch (err) {
-            setError('停止服务失败: ' + err.message);
+            setError(t('pylips.errors.stopServiceFailed') + ': ' + err.message);
         } finally {
             setIsLoading(false);
         }
@@ -125,10 +127,10 @@ const PyLipsPanel: React.FC = () => {
         try {
             const result = await speakWithExpression(testText);
             if (!result.success) {
-                setError(result.message || '语音测试失败');
+                setError(result.message || t('pylips.errors.speechTestFailed'));
             }
         } catch (err) {
-            setError('语音测试失败: ' + err.message);
+            setError(t('pylips.errors.speechTestFailed') + ': ' + err.message);
         } finally {
             setIsLoading(false);
         }
@@ -138,7 +140,7 @@ const PyLipsPanel: React.FC = () => {
         try {
             await stopSpeech();
         } catch (err) {
-            setError('停止语音失败: ' + err.message);
+            setError(t('pylips.errors.stopSpeechFailed') + ': ' + err.message);
         }
     };
 
@@ -146,10 +148,10 @@ const PyLipsPanel: React.FC = () => {
         try {
             const result = await setExpression(expression as any);
             if (!result.success) {
-                setError(result.message || '表情测试失败');
+                setError(result.message || t('pylips.errors.expressionTestFailed'));
             }
         } catch (err) {
-            setError('表情测试失败: ' + err.message);
+            setError(t('pylips.errors.expressionTestFailed') + ': ' + err.message);
         }
     };
 
@@ -166,10 +168,10 @@ const PyLipsPanel: React.FC = () => {
             
             const result = await lookAt(x, y, z);
             if (!result.success) {
-                setError(result.message || '注视测试失败');
+                setError(result.message || t('pylips.errors.lookTestFailed'));
             }
         } catch (err) {
-            setError('注视测试失败: ' + err.message);
+            setError(t('pylips.errors.lookTestFailed') + ': ' + err.message);
         }
     };
 
@@ -181,10 +183,10 @@ const PyLipsPanel: React.FC = () => {
                 setShowConfigDialog(false);
                 await refreshStatus();
             } else {
-                setError(result.message || '更新配置失败');
+                setError(result.message || t('pylips.errors.updateConfigFailed'));
             }
         } catch (err) {
-            setError('更新配置失败: ' + err.message);
+            setError(t('pylips.errors.updateConfigFailed') + ': ' + err.message);
         } finally {
             setIsLoading(false);
         }
@@ -198,16 +200,16 @@ const PyLipsPanel: React.FC = () => {
     };
 
     const getStatusText = () => {
-        if (!isServiceHealthy) return '服务不可用';
-        if (status?.face_server_running && status?.face_initialized) return '运行中';
-        if (status?.face_server_running) return '启动中';
-        return '已停止';
+        if (!isServiceHealthy) return t('pylips.status.unavailable');
+        if (status?.face_server_running && status?.face_initialized) return t('pylips.status.running');
+        if (status?.face_server_running) return t('pylips.status.starting');
+        return t('pylips.status.stopped');
     };
 
     return (
         <Box p={3}>
             <Typography variant="h4" gutterBottom>
-                PyLips 数字人控制面板
+                {t('pylips.title')}
             </Typography>
 
             {error && (
@@ -220,13 +222,13 @@ const PyLipsPanel: React.FC = () => {
             <Card sx={{ mb: 3 }}>
                 <CardContent>
                     <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                        <Typography variant="h6">服务状态</Typography>
+                        <Typography variant="h6">{t('pylips.serviceStatus')}</Typography>
                         <Button
                             startIcon={<Refresh />}
                             onClick={refreshStatus}
                             disabled={isLoading}
                         >
-                            刷新
+                            {t('pylips.refresh')}
                         </Button>
                     </Box>
 
@@ -240,12 +242,12 @@ const PyLipsPanel: React.FC = () => {
                         </Grid>
                         <Grid item>
                             <Typography variant="body2" color="textSecondary">
-                                TTS方法: {status?.tts_method || 'N/A'}
+                                {t('pylips.ttsMethod')}: {status?.tts_method || 'N/A'}
                             </Typography>
                         </Grid>
                         <Grid item>
                             <Typography variant="body2" color="textSecondary">
-                                语音ID: {status?.current_voice_id || '默认'}
+                                {t('pylips.voiceId')}: {status?.current_voice_id || t('pylips.default')}
                             </Typography>
                         </Grid>
                     </Grid>
@@ -260,7 +262,7 @@ const PyLipsPanel: React.FC = () => {
                                     onClick={handleStartService}
                                     disabled={isLoading || (status?.face_server_running && status?.face_initialized)}
                                 >
-                                    启动服务
+                                    {t('pylips.startService')}
                                 </Button>
                             </Grid>
                             <Grid item>
@@ -271,7 +273,7 @@ const PyLipsPanel: React.FC = () => {
                                     onClick={handleStopService}
                                     disabled={isLoading || !status?.face_server_running}
                                 >
-                                    停止服务
+                                    {t('pylips.stopService')}
                                 </Button>
                             </Grid>
                             <Grid item>
@@ -281,7 +283,7 @@ const PyLipsPanel: React.FC = () => {
                                     onClick={() => setShowConfigDialog(true)}
                                     disabled={isLoading}
                                 >
-                                    配置
+                                    {t('pylips.config')}
                                 </Button>
                             </Grid>
                         </Grid>
@@ -293,17 +295,17 @@ const PyLipsPanel: React.FC = () => {
             <Card sx={{ mb: 3 }}>
                 <CardContent>
                     <Typography variant="h6" gutterBottom>
-                        语音测试
+                        {t('pylips.speechTest')}
                     </Typography>
                     
                     <Grid container spacing={2} alignItems="center">
                         <Grid item xs={12} md={8}>
                             <TextField
                                 fullWidth
-                                label="测试文本"
+                                label={t('pylips.testText')}
                                 value={testText}
                                 onChange={(e) => setTestText(e.target.value)}
-                                placeholder="输入要测试的语音文本..."
+                                placeholder={t('pylips.testTextPlaceholder')}
                                 multiline
                                 rows={2}
                             />
@@ -317,7 +319,7 @@ const PyLipsPanel: React.FC = () => {
                                     disabled={isLoading || !status?.face_initialized || !testText.trim()}
                                     fullWidth
                                 >
-                                    播放语音
+                                    {t('pylips.playSpeech')}
                                 </Button>
                                 <Button
                                     variant="outlined"
@@ -326,7 +328,7 @@ const PyLipsPanel: React.FC = () => {
                                     disabled={isLoading || !status?.face_initialized}
                                     fullWidth
                                 >
-                                    停止语音
+                                    {t('pylips.stopSpeech')}
                                 </Button>
                             </Box>
                         </Grid>
@@ -338,13 +340,13 @@ const PyLipsPanel: React.FC = () => {
             <Card sx={{ mb: 3 }}>
                 <CardContent>
                     <Typography variant="h6" gutterBottom>
-                        表情和注视测试
+                        {t('pylips.expressionAndLookTest')}
                     </Typography>
                     
                     <Grid container spacing={2}>
                         <Grid item xs={12} md={6}>
                             <Typography variant="subtitle2" gutterBottom>
-                                表情测试
+                                {t('pylips.expressionTest')}
                             </Typography>
                             <Box display="flex" gap={1} flexWrap="wrap">
                                 {['happy', 'sad', 'surprised', 'angry', 'neutral'].map((expr) => (
@@ -356,10 +358,7 @@ const PyLipsPanel: React.FC = () => {
                                         onClick={() => handleTestExpression(expr)}
                                         disabled={isLoading || !status?.face_initialized}
                                     >
-                                        {expr === 'happy' ? '开心' :
-                                         expr === 'sad' ? '悲伤' :
-                                         expr === 'surprised' ? '惊讶' :
-                                         expr === 'angry' ? '愤怒' : '中性'}
+                                        {t(`pylips.expressions.${expr}`)}
                                     </Button>
                                 ))}
                             </Box>
@@ -367,7 +366,7 @@ const PyLipsPanel: React.FC = () => {
                         
                         <Grid item xs={12} md={6}>
                             <Typography variant="subtitle2" gutterBottom>
-                                注视方向测试
+                                {t('pylips.lookDirectionTest')}
                             </Typography>
                             <Box display="flex" gap={1} flexWrap="wrap">
                                 {['center', 'left', 'right', 'up', 'down'].map((dir) => (
@@ -379,10 +378,7 @@ const PyLipsPanel: React.FC = () => {
                                         onClick={() => handleTestLook(dir)}
                                         disabled={isLoading || !status?.face_initialized}
                                     >
-                                        {dir === 'center' ? '中央' :
-                                         dir === 'left' ? '左' :
-                                         dir === 'right' ? '右' :
-                                         dir === 'up' ? '上' : '下'}
+                                        {t(`pylips.directions.${dir}`)}
                                     </Button>
                                 ))}
                             </Box>
@@ -393,31 +389,31 @@ const PyLipsPanel: React.FC = () => {
 
             {/* 配置对话框 */}
             <Dialog open={showConfigDialog} onClose={() => setShowConfigDialog(false)} maxWidth="sm" fullWidth>
-                <DialogTitle>PyLips 配置</DialogTitle>
+                <DialogTitle>{t('pylips.configTitle')}</DialogTitle>
                 <DialogContent>
                     <Box mt={2}>
                         <Grid container spacing={2}>
                             <Grid item xs={12}>
                                 <FormControl fullWidth>
-                                    <InputLabel>TTS方法</InputLabel>
+                                    <InputLabel>{t('pylips.ttsMethod')}</InputLabel>
                                     <Select
                                         value={config.tts_method}
-                                        label="TTS方法"
+                                        label={t('pylips.ttsMethod')}
                                         onChange={(e) => setConfig({...config, tts_method: e.target.value as any})}
                                     >
-                                        <MenuItem value="system">系统TTS</MenuItem>
-                                        <MenuItem value="polly">Amazon Polly</MenuItem>
+                                        <MenuItem value="system">{t('pylips.systemTts')}</MenuItem>
+                            <MenuItem value="polly">{t('pylips.amazonPolly')}</MenuItem>
                                     </Select>
                                 </FormControl>
                             </Grid>
                             <Grid item xs={12}>
                                 <TextField
                                     fullWidth
-                                    label="语音ID"
+                                    label={t('pylips.voiceId')}
                                     value={config.voice_id || ''}
                                     onChange={(e) => setConfig({...config, voice_id: e.target.value || undefined})}
-                                    placeholder="留空使用默认语音"
-                                    helperText="可选：指定特定的语音ID"
+                                    placeholder={t('pylips.voiceIdPlaceholder')}
+                        helperText={t('pylips.voiceIdHelper')}
                                 />
                             </Grid>
                         </Grid>
@@ -425,10 +421,10 @@ const PyLipsPanel: React.FC = () => {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setShowConfigDialog(false)}>
-                        取消
+                        {t('common.cancel')}
                     </Button>
                     <Button onClick={handleUpdateConfig} variant="contained" disabled={isLoading}>
-                        {isLoading ? <CircularProgress size={20} /> : '应用配置'}
+                        {isLoading ? <CircularProgress size={20} /> : t('pylips.applyConfig')}
                     </Button>
                 </DialogActions>
             </Dialog>
@@ -436,4 +432,4 @@ const PyLipsPanel: React.FC = () => {
     );
 };
 
-export default PyLipsPanel; 
+export default PyLipsPanel;

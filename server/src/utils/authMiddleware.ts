@@ -1,6 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import { usersService } from '../services/users.service';
+
+interface CustomJwtPayload extends JwtPayload {
+    id: string;
+}
 
 interface AuthRequest extends Request {
     user?: any;
@@ -15,7 +19,7 @@ export const authenticateToken = async (req: AuthRequest, res: Response, next: N
             return res.status(401).json({ message: 'Access token required' });
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY) as CustomJwtPayload;
         const user = await usersService.getUserById(decoded.id);
         
         if (!user) {
@@ -46,4 +50,4 @@ export const requireAdmin = async (req: AuthRequest, res: Response, next: NextFu
         console.error('Admin middleware error:', error);
         return res.status(500).json({ message: 'Authorization check failed' });
     }
-}; 
+};

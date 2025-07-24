@@ -18,6 +18,7 @@ import {
     Refresh
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
+import { useLanguage } from '@contexts/LanguageContext';
 import { checkPyLipsHealth, startPyLipsService, stopSpeech } from '@DAL/server-requests/pylips';
 
 const FaceContainer = styled(Box)({
@@ -78,6 +79,7 @@ const PyLipsFaceViewer: React.FC<PyLipsFaceViewerProps> = ({
     const [error, setError] = useState<string>('');
     const [isMuted, setIsMuted] = useState(false);
     const iframeRef = useRef<HTMLIFrameElement>(null);
+    const { t } = useLanguage();
 
     useEffect(() => {
         if (isVisible && !faceUrl) {
@@ -108,12 +110,12 @@ const PyLipsFaceViewer: React.FC<PyLipsFaceViewerProps> = ({
                     setIsLoading(false);
                 }, 2000);
             } else {
-                throw new Error(startResult.message || '启动PyLips失败');
+                throw new Error(startResult.message || t('pylips.faceViewer.startFailed'));
             }
             
         } catch (err) {
             console.error('初始化PyLips失败:', err);
-            setError(err.message || '初始化PyLips失败');
+            setError(err.message || t('pylips.faceViewer.initFailed'));
             setIsLoading(false);
             setIsConnected(false);
         }
@@ -141,9 +143,9 @@ const PyLipsFaceViewer: React.FC<PyLipsFaceViewerProps> = ({
     };
 
     const getStatusText = () => {
-        if (isLoading) return '连接中...';
-        if (isConnected) return '已连接';
-        return '未连接';
+        if (isLoading) return t('pylips.faceViewer.connecting');
+        if (isConnected) return t('pylips.faceViewer.connected');
+        return t('pylips.faceViewer.disconnected');
     };
 
     const getStatusType = (): 'connected' | 'disconnected' | 'loading' => {
@@ -157,10 +159,10 @@ const PyLipsFaceViewer: React.FC<PyLipsFaceViewerProps> = ({
             <CardContent sx={{ padding: '16px !important' }}>
                 <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
                     <Typography variant="h6" component="div" color="primary">
-                        LEXI 数字人
+                        {t('pylips.faceViewer.title')}
                     </Typography>
                     <Box display="flex" alignItems="center" gap={1}>
-                        <Tooltip title={isVisible ? "隐藏人脸" : "显示人脸"}>
+                        <Tooltip title={isVisible ? t('pylips.faceViewer.hideFace') : t('pylips.faceViewer.showFace')}>
                             <IconButton onClick={onToggleVisibility} size="small">
                                 {isVisible ? <VisibilityOff /> : <Visibility />}
                             </IconButton>
@@ -190,7 +192,7 @@ const PyLipsFaceViewer: React.FC<PyLipsFaceViewerProps> = ({
                             </StatusBadge>
 
                             <ControlsOverlay>
-                                <Tooltip title="刷新连接">
+                                <Tooltip title={t('pylips.faceViewer.refreshConnection')}>
                                     <IconButton 
                                         size="small" 
                                         onClick={handleRefresh}
@@ -199,7 +201,7 @@ const PyLipsFaceViewer: React.FC<PyLipsFaceViewerProps> = ({
                                         <Refresh />
                                     </IconButton>
                                 </Tooltip>
-                                <Tooltip title={isMuted ? "取消静音" : "静音"}>
+                                <Tooltip title={isMuted ? t('pylips.faceViewer.unmute') : t('pylips.faceViewer.mute')}>
                                     <IconButton 
                                         size="small" 
                                         onClick={handleMuteToggle}
@@ -221,7 +223,7 @@ const PyLipsFaceViewer: React.FC<PyLipsFaceViewerProps> = ({
                                 >
                                     <CircularProgress size={48} />
                                     <Typography variant="body2" color="white">
-                                        正在初始化数字人...
+                                        {t('pylips.faceViewer.initializing')}
                                     </Typography>
                                 </Box>
                             )}
@@ -236,7 +238,7 @@ const PyLipsFaceViewer: React.FC<PyLipsFaceViewerProps> = ({
                                         setIsConnected(true);
                                     }}
                                     onError={() => {
-                                        setError('无法加载数字人脸');
+                                        setError(t('pylips.faceViewer.loadFailed'));
                                         setIsLoading(false);
                                         setIsConnected(false);
                                     }}
@@ -253,7 +255,7 @@ const PyLipsFaceViewer: React.FC<PyLipsFaceViewerProps> = ({
                                     gap={2}
                                 >
                                     <Typography variant="body1" color="white" textAlign="center">
-                                        点击上方的眼睛图标显示数字人
+                                        {t('pylips.faceViewer.clickToShow')}
                                     </Typography>
                                 </Box>
                             )}
@@ -265,4 +267,4 @@ const PyLipsFaceViewer: React.FC<PyLipsFaceViewerProps> = ({
     );
 };
 
-export default PyLipsFaceViewer; 
+export default PyLipsFaceViewer;

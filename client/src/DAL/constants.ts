@@ -66,6 +66,7 @@ export const defaultExperiment = {
     experimentFeatures: {
         userAnnotation: false,
         streamMessage: false,
+        voiceInputMode: 'dialog',
     },
 } as const;
 

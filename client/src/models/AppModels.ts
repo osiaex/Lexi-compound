@@ -120,6 +120,7 @@ export interface ExperimentLeanType {
 export interface ExperimentFeatures {
     userAnnotation: boolean;
     streamMessage: boolean;
+    voiceInputMode: 'dialog' | 'direct';
 }
 
 export interface NewUserInfoType {

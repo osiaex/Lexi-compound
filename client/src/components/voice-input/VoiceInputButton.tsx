@@ -20,17 +20,21 @@ interface VoiceInputButtonProps {
     onTranscriptionComplete: (text: string) => void;
     disabled?: boolean;
     experimentId: string;
+    voiceInputMode?: 'dialog' | 'direct';
 }
 
 const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
     onTranscriptionComplete,
     disabled = false,
-    experimentId
+    experimentId,
+    voiceInputMode = 'dialog'
 }) => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isTranscribing, setIsTranscribing] = useState(false);
     const [transcriptionResult, setTranscriptionResult] = useState<string>('');
     const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+    const [isDirectRecording, setIsDirectRecording] = useState(false);
+    const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
     const { openSnackbar } = useSnackbar();
     
     // 添加组件挂载状态跟踪
@@ -92,7 +96,14 @@ const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
             if (result.success) {
                 if (isMountedRef.current) {
                     setTranscriptionResult(result.data.text);
-                    openSnackbar('语音转录完成', SnackbarStatus.SUCCESS);
+                    if (voiceInputMode === 'direct') {
+                        // 直接模式：自动使用转录结果
+                        onTranscriptionComplete(result.data.text);
+                        openSnackbar('语音转录完成并已发送', SnackbarStatus.SUCCESS);
+                    } else {
+                        // 对话框模式：显示转录结果
+                        openSnackbar('语音转录完成', SnackbarStatus.SUCCESS);
+                    }
                 }
             } else {
                 throw new Error(result.message || '转录失败');
@@ -116,9 +127,12 @@ const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
         } finally {
             if (isMountedRef.current) {
                 setIsTranscribing(false);
+                if (voiceInputMode === 'direct') {
+                    setIsDirectRecording(false);
+                }
             }
         }
-    }, [experimentId, openSnackbar]);
+    }, [experimentId, openSnackbar, voiceInputMode, onTranscriptionComplete]);
 
     const handleUseTranscription = useCallback(() => {
         if (!isMountedRef.current) return;
@@ -135,16 +149,79 @@ const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
         setIsTranscribing(false);
     }, []);
 
+    // 直接录音模式的开始录音
+    const startDirectRecording = useCallback(async () => {
+        if (!isMountedRef.current) return;
+        
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const recorder = new MediaRecorder(stream);
+            const chunks: Blob[] = [];
+
+            recorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    chunks.push(event.data);
+                }
+            };
+
+            recorder.onstop = () => {
+                const blob = new Blob(chunks, { type: 'audio/webm' });
+                if (blob.size > 0) {
+                    handleRecordingComplete(blob, 0);
+                }
+                // 停止所有音频轨道
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            recorder.start();
+            setMediaRecorder(recorder);
+            setIsDirectRecording(true);
+            openSnackbar('开始录音，再次点击停止', SnackbarStatus.INFO);
+        } catch (error) {
+            console.error('Failed to start recording:', error);
+            openSnackbar('无法访问麦克风，请检查权限设置', SnackbarStatus.ERROR);
+        }
+    }, [handleRecordingComplete, openSnackbar]);
+
+    // 直接录音模式的停止录音
+    const stopDirectRecording = useCallback(() => {
+        if (!isMountedRef.current) return;
+        
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+            setMediaRecorder(null);
+        }
+    }, [mediaRecorder]);
+
+    // 处理按钮点击
+    const handleButtonClick = useCallback(() => {
+        if (!isMountedRef.current) return;
+        
+        if (voiceInputMode === 'direct') {
+            if (isDirectRecording) {
+                stopDirectRecording();
+            } else {
+                startDirectRecording();
+            }
+        } else {
+            handleOpenDialog();
+        }
+    }, [voiceInputMode, isDirectRecording, stopDirectRecording, startDirectRecording, handleOpenDialog]);
+
     return (
         <>
-            <Tooltip title="语音输入">
+            <Tooltip title={voiceInputMode === 'direct' ? (isDirectRecording ? '停止录音' : '开始录音') : '语音输入'}>
                 <IconButton
-                    color="primary"
-                    onClick={handleOpenDialog}
-                    disabled={disabled}
+                    color={isDirectRecording ? 'secondary' : 'primary'}
+                    onClick={handleButtonClick}
+                    disabled={disabled || isTranscribing}
                     size="medium"
                 >
-                    <MicIcon />
+                    {isTranscribing ? (
+                        <CircularProgress size={24} />
+                    ) : (
+                        <MicIcon />
+                    )}
                 </IconButton>
             </Tooltip>
 
@@ -244,4 +321,4 @@ const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
     );
 };
 
-export default VoiceInputButton; 
+export default VoiceInputButton;

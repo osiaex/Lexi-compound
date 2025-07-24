@@ -1,6 +1,7 @@
 import { AdminSections } from '@DAL/constants';
 import { getAgents } from '@DAL/server-requests/agents';
 import { SnackbarStatus, useSnackbar } from '@contexts/SnackbarProvider';
+import { LanguageProvider } from '@contexts/LanguageContext';
 import useEffectAsync from '@hooks/useEffectAsync';
 import { AgentType } from '@models/AppModels';
 import { Grid } from '@mui/material';
@@ -41,43 +42,45 @@ const Admin = () => {
     }, []);
 
     return (
-        <MainContainer container>
-            <Grid item xs={2} sm={2} md={2} lg={2} style={{ backgroundColor: theme.palette.primary.main }}>
-                <SidebarAdmin />
-            </Grid>
-            <Grid item xs={10} sm={10} md={10} lg={10}>
-                <SectionContainer
-                    sx={{
-                        '&.MuiContainer-root': { maxWidth: 'none', padding: 0 },
-                        marginLeft: 0,
-                        marginRight: 0,
-                        padding: 0,
-                    }}
-                >
-                    <SectionInnerContainer container>
-                        <Routes>
-                            <Route path="/" element={<Navigate to={AdminSections.EXPERIMENTS} replace />} />
-                            <Route
-                                path={AdminSections.EXPERIMENTS}
-                                element={<Experiments agents={agents} forms={forms} />}
-                            />
-                            <Route
-                                path={AdminSections.AGENTS}
-                                element={<AgentsListContainer agents={agents} setAgents={setAgents} />}
-                            />
-                            <Route
-                                path={AdminSections.FORMS}
-                                element={<FormsPanel forms={forms} setForms={setForms} />}
-                            />
-                            <Route path={AdminSections.DATA} element={<DataPanel />} />
-                            <Route path={AdminSections.PYLIPS} element={<PyLipsPanel />} />
-                            <Route path={AdminSections.WHISPER} element={<WhisperPanel />} />
-                            <Route path={AdminSections.SETTINGS} element={<SettingsPanel />} />
-                        </Routes>
-                    </SectionInnerContainer>
-                </SectionContainer>
-            </Grid>
-        </MainContainer>
+        <LanguageProvider>
+            <MainContainer container>
+                <Grid item xs={2} sm={2} md={2} lg={2} style={{ backgroundColor: theme.palette.primary.main }}>
+                    <SidebarAdmin />
+                </Grid>
+                <Grid item xs={10} sm={10} md={10} lg={10}>
+                    <SectionContainer
+                        sx={{
+                            '&.MuiContainer-root': { maxWidth: 'none', padding: 0 },
+                            marginLeft: 0,
+                            marginRight: 0,
+                            padding: 0,
+                        }}
+                    >
+                        <SectionInnerContainer container>
+                            <Routes>
+                                <Route path="/" element={<Navigate to={AdminSections.EXPERIMENTS} replace />} />
+                                <Route
+                                    path={AdminSections.EXPERIMENTS}
+                                    element={<Experiments agents={agents} forms={forms} />}
+                                />
+                                <Route
+                                    path={AdminSections.AGENTS}
+                                    element={<AgentsListContainer agents={agents} setAgents={setAgents} />}
+                                />
+                                <Route
+                                    path={AdminSections.FORMS}
+                                    element={<FormsPanel forms={forms} setForms={setForms} />}
+                                />
+                                <Route path={AdminSections.DATA} element={<DataPanel />} />
+                                <Route path={AdminSections.PYLIPS} element={<PyLipsPanel />} />
+                                <Route path={AdminSections.WHISPER} element={<WhisperPanel />} />
+                                <Route path={AdminSections.SETTINGS} element={<SettingsPanel />} />
+                            </Routes>
+                        </SectionInnerContainer>
+                    </SectionContainer>
+                </Grid>
+            </MainContainer>
+        </LanguageProvider>
     );
 };
 

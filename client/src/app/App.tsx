@@ -1,10 +1,10 @@
 import LoadingPage from '@components/common/LoadingPage';
 import LoginExperimentRoute from '@components/common/LoginExperimentRoute';
 import PrivateExperimentRoute from '@components/common/ProtectedExperimentRoute';
-import ServiceStatusMonitor from '@components/common/ServiceStatusMonitor';
 import GlobalErrorHandler from '@components/common/GlobalErrorHandler';
 import useActiveUser from '@hooks/useActiveUser';
 import ProjectOverview from '@screens/Project-Overview/ProjectOverview';
+import { LanguageProvider } from '@contexts/LanguageContext';
 import React, { FC, Suspense, lazy, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import './styles.css';
@@ -31,10 +31,10 @@ const App: FC = () => {
     const TopBar = lazy(() => import('@components/top-bar/TopBar'));
 
     return (
-        <BrowserRouter>
-            <GlobalErrorHandler>
-                <ServiceStatusMonitor />
-                <Suspense fallback={<LoadingPage />}>
+        <LanguageProvider>
+            <BrowserRouter>
+                <GlobalErrorHandler>
+                    <Suspense fallback={<LoadingPage />}>
                     {isLoading ? (
                         <LoadingPage />
                     ) : (
@@ -121,9 +121,10 @@ const App: FC = () => {
                         />
                         </Routes>
                     )}
-                </Suspense>
-            </GlobalErrorHandler>
-        </BrowserRouter>
+                    </Suspense>
+                </GlobalErrorHandler>
+            </BrowserRouter>
+        </LanguageProvider>
     );
 };
 

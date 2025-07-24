@@ -10,9 +10,11 @@ import { useState } from 'react';
 import ExperimentForm from '../ExperimentForm';
 import ExperimentsList from '../experiments-list/ExperimentsList';
 import { AddButton, IconButtonStyled, MainContainerStyled, NextPrevButton} from './Experiments.s';
+import { useLanguage } from '@contexts/LanguageContext';
 
 export const Experiments = ({ agents, forms }) => {
     const { openSnackbar } = useSnackbar();
+    const { t } = useLanguage();
     const [experiments, setExperiments] = useState<ExperimentType[]>([]);
     const [isEditMode, setIsEditMode] = useState(false);
     const [isLoadingStatusChange, setIsLoadingStatusChange] = useState(false);
@@ -33,7 +35,7 @@ export const Experiments = ({ agents, forms }) => {
             setExperiments(res);
             setTempExperiments(res);
         } catch (error) {
-            openSnackbar('Failed to load experiments', SnackbarStatus.ERROR);
+            openSnackbar(t('experiments.failedToLoad'), SnackbarStatus.ERROR);
             setExperiments([]);
             setTempExperiments([]);
         }
@@ -70,7 +72,7 @@ export const Experiments = ({ agents, forms }) => {
             setExperiments(tempExperiments);
             setModifiedExperiments({});
         } catch {
-            openSnackbar('Failed to update experiments status', SnackbarStatus.ERROR);
+            openSnackbar(t('experiments.failedToUpdateStatus'), SnackbarStatus.ERROR);
             setTempExperiments(experiments);
             setModifiedExperiments({});
         }
@@ -85,13 +87,13 @@ export const Experiments = ({ agents, forms }) => {
     const handleDeleteExperiment = async () => {
         try {
             setIsLoadingDelete(true);
-            openSnackbar('Deleting Experiment...', SnackbarStatus.INFO);
+            openSnackbar(t('experiments.deletingExperiment'), SnackbarStatus.INFO);
             await deleteExperiment(editExperiment._id);
             setTempExperiments(tempExperiments.filter((exp) => exp._id !== editExperiment._id));
             setExperiments(experiments.filter((exp) => exp._id !== editExperiment._id));
-            openSnackbar('Delete Experiment Success !', SnackbarStatus.SUCCESS);
+            openSnackbar(t('experiments.deleteSuccess'), SnackbarStatus.SUCCESS);
         } catch (err) {
-            openSnackbar('Failed to Delete Experiment', SnackbarStatus.ERROR);
+            openSnackbar(t('experiments.failedToDelete'), SnackbarStatus.ERROR);
         } finally {
             setIsLoadingDelete(false);
             setOpenDeleteExpDialog(false);
@@ -102,21 +104,20 @@ export const Experiments = ({ agents, forms }) => {
     return (
         <MainContainerStyled>
             <Typography variant="h6" gutterBottom style={{ borderBottom: '1px solid gray', marginBottom: '24px' }}>
-                Experiments
+                {t('experiments.title')}
             </Typography>
             <Typography variant="h5" gutterBottom fontWeight={500}>
-                Experiments Manager
+                {t('experiments.manager')}
             </Typography>
             <Box display={'flex'} justifyContent={'space-between'} alignItems={'center'}>
                 <Typography variant="body2" gutterBottom fontWeight={500} marginBottom={2}>
-                    Manage your experiments, attach to them a agent, launch them, share with participants and
-                    more.
+                    {t('experiments.description')}
                 </Typography>
                 <Box display={'flex'} justifyContent={'end'}>
                     <AddButton onClick={() => setOpenExperimentFormDialog(true)} size="small">
                         <AddIcon style={{ color: 'floralwhite' }} />
                         <Typography variant="body2" fontWeight={500} color={'floralwhite'}>
-                            Add Experiment
+                            {t('experiments.addExperiment')}
                         </Typography>
                     </AddButton>
                 </Box>
@@ -159,14 +160,13 @@ export const Experiments = ({ agents, forms }) => {
                     }}
                     isLoading={isLoadingDelete}
                 >
-                    Deleting the experiment will delete all experiment users and conversation. Are you sure you
-                    want to delete?
+                    {t('experiments.deleteConfirmation')}
                 </WarningMessage>
             </Dialog>
             <Box display={'flex'} justifyContent={'center'} alignItems={'center'} mt={4} gap={2}>
                 <NextPrevButton disabled={pageNumber==="1"} onClick={() => setPageNumber(String(Number(pageNumber) - 1))} size="small">
                             <Typography variant="body2" fontWeight={500} color={'floralwhite'}>
-                                prev
+                                {t('experiments.prev')}
                             </Typography>
                 </NextPrevButton>
                 <Typography variant="h5" fontWeight={400} style={{color: '#4A90E2', fontSize: '22px',lineHeight: '1',textAlign: 'center',}}>
@@ -174,7 +174,7 @@ export const Experiments = ({ agents, forms }) => {
                 </Typography>
                 <NextPrevButton disabled={Number(expLimit) > experiments.length} onClick={() => setPageNumber(String(Number(pageNumber) + 1))} size="small">
                             <Typography variant="body2" fontWeight={500} color={'floralwhite'}>
-                                next
+                                {t('experiments.next')}
                             </Typography>
                 </NextPrevButton>
             </Box>

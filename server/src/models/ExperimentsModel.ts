@@ -40,7 +40,11 @@ export const experimentsSchema = new Schema<IExperiment>(
         maxParticipants: { type: Number },
         totalSessions: { type: Number, default: () => 0 },
         openSessions: { type: Number, default: () => 0 },
-        experimentFeatures: { type: Object },
+        experimentFeatures: {
+            userAnnotation: { type: Boolean, default: false },
+            streamMessage: { type: Boolean, default: false },
+            voiceInputMode: { type: String, enum: ['dialog', 'direct'], default: 'dialog' },
+        },
         whisperSettings: { type: WhisperSettingsSchema },
     },
     { versionKey: false },

@@ -25,8 +25,10 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import { useSnackbar, SnackbarStatus } from '@contexts/SnackbarProvider';
 import { getWhisperSystemInfo, WhisperSystemInfo } from '../../../../DAL/server-requests/whisper';
 import WhisperExperimentConfig from './WhisperExperimentConfig';
+import { useLanguage } from '@contexts/LanguageContext';
 
 const WhisperPanel: React.FC = () => {
+    const { t } = useLanguage();
     const [systemInfo, setSystemInfo] = useState<WhisperSystemInfo | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -41,11 +43,11 @@ const WhisperPanel: React.FC = () => {
             setSystemInfo(info);
             
             if (!showLoading) {
-                openSnackbar('系统信息已刷新', SnackbarStatus.SUCCESS);
+                openSnackbar(t('whisper.systemInfoRefreshed'), SnackbarStatus.SUCCESS);
             }
         } catch (error) {
             console.error('Failed to fetch system info:', error);
-            openSnackbar('获取系统信息失败', SnackbarStatus.ERROR);
+            openSnackbar(t('whisper.failedToFetchSystemInfo'), SnackbarStatus.ERROR);
         } finally {
             setIsLoading(false);
             setIsRefreshing(false);
@@ -80,7 +82,7 @@ const WhisperPanel: React.FC = () => {
                 <CardContent>
                     <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                         <Typography variant="h6" component="h2">
-                            系统状态
+                            {t('whisper.systemStatus')}
                         </Typography>
                         <Button
                             startIcon={<RefreshIcon />}
@@ -88,19 +90,19 @@ const WhisperPanel: React.FC = () => {
                             disabled={isRefreshing}
                             size="small"
                         >
-                            {isRefreshing ? <CircularProgress size={16} /> : '刷新'}
+                            {isRefreshing ? <CircularProgress size={16} /> : t('whisper.refresh')}
                         </Button>
                     </Box>
 
                     {allSystemsReady ? (
                         <Alert severity="success" sx={{ mb: 2 }}>
-                            <AlertTitle>系统就绪</AlertTitle>
-                            Whisper 语音识别系统已准备就绪，可以正常使用。
+                            <AlertTitle>{t('whisper.systemReady')}</AlertTitle>
+                            {t('whisper.systemReadyDesc')}
                         </Alert>
                     ) : (
                         <Alert severity="error" sx={{ mb: 2 }}>
-                            <AlertTitle>系统未就绪</AlertTitle>
-                            请检查以下问题并完成相应配置。
+                            <AlertTitle>{t('whisper.systemNotReady')}</AlertTitle>
+                            {t('whisper.systemNotReadyDesc')}
                         </Alert>
                     )}
 
@@ -110,14 +112,14 @@ const WhisperPanel: React.FC = () => {
                                 {getStatusIcon(systemInfo.pythonAvailable)}
                             </ListItemIcon>
                             <ListItemText
-                                primary="Python 环境"
+                                primary={t('whisper.pythonEnvironment')}
                                 secondary={systemInfo.pythonAvailable ? 
-                                    'Python 虚拟环境已配置' : 
-                                    'Python 虚拟环境未找到或配置错误'
+                                    t('whisper.pythonConfigured') : 
+                                    t('whisper.pythonNotConfigured')
                                 }
                             />
                             <Chip
-                                label={systemInfo.pythonAvailable ? '可用' : '不可用'}
+                                label={systemInfo.pythonAvailable ? t('whisper.available') : t('whisper.unavailable')}
                                 color={getStatusColor(systemInfo.pythonAvailable)}
                                 size="small"
                             />
@@ -128,14 +130,14 @@ const WhisperPanel: React.FC = () => {
                                 {getStatusIcon(systemInfo.tempDirWritable)}
                             </ListItemIcon>
                             <ListItemText
-                                primary="临时目录"
+                                primary={t('whisper.tempDirectory')}
                                 secondary={systemInfo.tempDirWritable ? 
-                                    '临时文件目录可写' : 
-                                    '临时文件目录不可写，请检查权限'
+                                    t('whisper.tempDirWritable') : 
+                                    t('whisper.tempDirNotWritable')
                                 }
                             />
                             <Chip
-                                label={systemInfo.tempDirWritable ? '可用' : '不可用'}
+                                label={systemInfo.tempDirWritable ? t('whisper.available') : t('whisper.unavailable')}
                                 color={getStatusColor(systemInfo.tempDirWritable)}
                                 size="small"
                             />
@@ -148,14 +150,14 @@ const WhisperPanel: React.FC = () => {
                                 {getStatusIcon(systemInfo.modelsAvailable.tiny)}
                             </ListItemIcon>
                             <ListItemText
-                                primary="Tiny 模型"
+                                primary={t('whisper.tinyModel')}
                                 secondary={systemInfo.modelsAvailable.tiny ? 
-                                    'Whisper Tiny 模型已下载 (~39MB)' : 
-                                    'Whisper Tiny 模型未下载'
+                                    t('whisper.tinyModelDownloaded') : 
+                                    t('whisper.tinyModelNotDownloaded')
                                 }
                             />
                             <Chip
-                                label={systemInfo.modelsAvailable.tiny ? '已下载' : '未下载'}
+                                label={systemInfo.modelsAvailable.tiny ? t('whisper.downloaded') : t('whisper.notDownloaded')}
                                 color={getStatusColor(systemInfo.modelsAvailable.tiny)}
                                 size="small"
                             />
@@ -166,14 +168,14 @@ const WhisperPanel: React.FC = () => {
                                 {getStatusIcon(systemInfo.modelsAvailable.small)}
                             </ListItemIcon>
                             <ListItemText
-                                primary="Small 模型"
+                                primary={t('whisper.smallModel')}
                                 secondary={systemInfo.modelsAvailable.small ? 
-                                    'Whisper Small 模型已下载 (~244MB)' : 
-                                    'Whisper Small 模型未下载'
+                                    t('whisper.smallModelDownloaded') : 
+                                    t('whisper.smallModelNotDownloaded')
                                 }
                             />
                             <Chip
-                                label={systemInfo.modelsAvailable.small ? '已下载' : '未下载'}
+                                label={systemInfo.modelsAvailable.small ? t('whisper.downloaded') : t('whisper.notDownloaded')}
                                 color={getStatusColor(systemInfo.modelsAvailable.small)}
                                 size="small"
                             />
@@ -189,26 +191,26 @@ const WhisperPanel: React.FC = () => {
             <Card>
                 <CardContent>
                     <Typography variant="h6" component="h2" gutterBottom>
-                        模型信息
+                        {t('whisper.modelInfo')}
                     </Typography>
                     
                     <Grid container spacing={2}>
                         <Grid item xs={12} md={6}>
                             <Box p={2} border={1} borderColor="divider" borderRadius={1}>
                                 <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                                    Tiny 模型
+                                    {t('whisper.tinyModel')}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                                    文件大小: ~39MB
+                                    {t('whisper.fileSize')}: ~39MB
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                                    处理速度: 非常快
+                                    {t('whisper.processingSpeed')}: {t('whisper.veryFast')}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                                    准确率: 一般
+                                    {t('whisper.accuracy')}: {t('whisper.average')}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                    适用场景: 快速转录、实时处理
+                                    {t('whisper.useCase')}: {t('whisper.quickTranscription')}
                                 </Typography>
                             </Box>
                         </Grid>
@@ -216,19 +218,19 @@ const WhisperPanel: React.FC = () => {
                         <Grid item xs={12} md={6}>
                             <Box p={2} border={1} borderColor="divider" borderRadius={1}>
                                 <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                                    Small 模型
+                                    {t('whisper.smallModel')}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                                    文件大小: ~244MB
+                                    {t('whisper.fileSize')}: ~244MB
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                                    处理速度: 较快
+                                    {t('whisper.processingSpeed')}: {t('whisper.fast')}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                                    准确率: 较高
+                                    {t('whisper.accuracy')}: {t('whisper.high')}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                    适用场景: 平衡速度和准确率
+                                    {t('whisper.useCase')}: {t('whisper.balancedSpeedAccuracy')}
                                 </Typography>
                             </Box>
                         </Grid>
@@ -251,12 +253,12 @@ const WhisperPanel: React.FC = () => {
             <Card>
                 <CardContent>
                     <Typography variant="h6" component="h2" gutterBottom>
-                        安装说明
+                        {t('whisper.installationInstructions')}
                     </Typography>
                     
                     <Alert severity="info" sx={{ mb: 2 }}>
-                        <AlertTitle>需要手动配置</AlertTitle>
-                        请按照以下步骤完成 Whisper 环境配置：
+                        <AlertTitle>{t('whisper.manualConfigRequired')}</AlertTitle>
+                        {t('whisper.followStepsToComplete')}
                     </Alert>
 
                     <Box component="pre" sx={{ 
@@ -304,11 +306,11 @@ python -c "import whisper; whisper.load_model('small')"
     return (
         <Box sx={{ maxWidth: 'lg', width: '100%', padding: 3 }}>
             <Typography variant="h4" gutterBottom>
-                Whisper 语音识别配置
+                {t('whisper.title')}
             </Typography>
             
             <Typography variant="body1" color="text.secondary" gutterBottom sx={{ mb: 3 }}>
-                管理 Whisper 语音转文字功能的系统配置和模型状态。
+                {t('whisper.description')}
             </Typography>
 
             <Grid container spacing={3}>
@@ -332,4 +334,4 @@ python -c "import whisper; whisper.load_model('small')"
     );
 };
 
-export default WhisperPanel; 
+export default WhisperPanel;

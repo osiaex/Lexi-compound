@@ -21,6 +21,7 @@ export interface ExperimentForms {
 export interface ExperimentFeatures {
     userAnnotation: boolean;
     streamMessage: boolean;
+    voiceInputMode: 'dialog' | 'direct';
 }
 
 export interface WhisperSettings {

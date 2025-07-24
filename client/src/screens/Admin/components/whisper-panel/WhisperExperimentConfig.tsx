@@ -20,6 +20,7 @@ import {
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import { useSnackbar, SnackbarStatus } from '@contexts/SnackbarProvider';
+import { useLanguage } from '@contexts/LanguageContext';
 import { getWhisperConfig, updateWhisperConfig, WhisperConfig } from '../../../../DAL/server-requests/whisper';
 import { getExperiments } from '../../../../DAL/server-requests/experiments';
 
@@ -36,6 +37,7 @@ const WhisperExperimentConfig: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const { openSnackbar } = useSnackbar();
+    const { t } = useLanguage();
 
     // 获取实验列表
     useEffect(() => {
@@ -45,7 +47,7 @@ const WhisperExperimentConfig: React.FC = () => {
                 setExperiments(response || []);
             } catch (error) {
                 console.error('Failed to fetch experiments:', error);
-                openSnackbar('获取实验列表失败', SnackbarStatus.ERROR);
+                openSnackbar(t('whisper.experimentConfig.fetchExperimentsFailed'), SnackbarStatus.ERROR);
             }
         };
 
@@ -89,10 +91,10 @@ const WhisperExperimentConfig: React.FC = () => {
         setIsSaving(true);
         try {
             await updateWhisperConfig(selectedExperiment, config);
-            openSnackbar('配置保存成功', SnackbarStatus.SUCCESS);
+            openSnackbar(t('whisper.experimentConfig.configSavedSuccessfully'), SnackbarStatus.SUCCESS);
         } catch (error) {
             console.error('Failed to save config:', error);
-            openSnackbar('配置保存失败', SnackbarStatus.ERROR);
+            openSnackbar(t('whisper.experimentConfig.configSaveFailed'), SnackbarStatus.ERROR);
         }
         setIsSaving(false);
     };
@@ -101,27 +103,27 @@ const WhisperExperimentConfig: React.FC = () => {
         <Card sx={{ mb: 3 }}>
             <CardContent>
                 <Typography variant="h6" gutterBottom>
-                    实验配置管理
+                    {t('whisper.experimentConfig.title')}
                 </Typography>
                 
                 <Typography variant="body2" color="text.secondary" gutterBottom sx={{ mb: 2 }}>
-                    为特定实验配置 Whisper 语音识别功能
+                    {t('whisper.experimentConfig.description')}
                 </Typography>
 
                 <Grid container spacing={3}>
                     <Grid item xs={12} md={6}>
                         <FormControl fullWidth>
-                            <InputLabel>选择实验</InputLabel>
+                            <InputLabel>{t('whisper.experimentConfig.selectExperiment')}</InputLabel>
                             <Select
                                 value={selectedExperiment}
                                 onChange={(e) => setSelectedExperiment(e.target.value)}
-                                label="选择实验"
+                                label={t('whisper.experimentConfig.selectExperiment')}
                             >
                                 {experiments.map((exp) => (
                                     <MenuItem key={exp._id} value={exp._id}>
                                         <Box display="flex" alignItems="center" gap={1}>
                                             {exp.title}
-                                            {exp.isActive && <Chip label="激活" size="small" color="success" />}
+                                            {exp.isActive && <Chip label={t('whisper.experimentConfig.active')} size="small" color="success" />}
                                         </Box>
                                     </MenuItem>
                                 ))}
@@ -149,7 +151,7 @@ const WhisperExperimentConfig: React.FC = () => {
                                                     onChange={(e) => handleConfigChange('enabled', e.target.checked)}
                                                 />
                                             }
-                                            label="启用 Whisper 语音识别"
+                                            label={t('whisper.experimentConfig.enableWhisper')}
                                         />
                                     </Grid>
 
@@ -157,29 +159,29 @@ const WhisperExperimentConfig: React.FC = () => {
                                         <>
                                             <Grid item xs={12} md={4}>
                                                 <FormControl fullWidth>
-                                                    <InputLabel>模型大小</InputLabel>
+                                                    <InputLabel>{t('whisper.experimentConfig.modelSize')}</InputLabel>
                                                     <Select
                                                         value={config.modelSize}
                                                         onChange={(e) => handleConfigChange('modelSize', e.target.value)}
-                                                        label="模型大小"
+                                                        label={t('whisper.experimentConfig.modelSize')}
                                                     >
-                                                        <MenuItem value="tiny">Tiny (快速)</MenuItem>
-                                                        <MenuItem value="small">Small (准确)</MenuItem>
+                                                        <MenuItem value="tiny">{t('whisper.experimentConfig.tinyModel')}</MenuItem>
+                                                        <MenuItem value="small">{t('whisper.experimentConfig.smallModel')}</MenuItem>
                                                     </Select>
                                                 </FormControl>
                                             </Grid>
 
                                             <Grid item xs={12} md={4}>
                                                 <FormControl fullWidth>
-                                                    <InputLabel>语言</InputLabel>
+                                                    <InputLabel>{t('whisper.experimentConfig.language')}</InputLabel>
                                                     <Select
                                                         value={config.language}
                                                         onChange={(e) => handleConfigChange('language', e.target.value)}
-                                                        label="语言"
+                                                        label={t('whisper.experimentConfig.language')}
                                                     >
-                                                        <MenuItem value="auto">自动检测</MenuItem>
-                                                        <MenuItem value="zh">中文</MenuItem>
-                                                        <MenuItem value="en">英文</MenuItem>
+                                                        <MenuItem value="auto">{t('whisper.experimentConfig.autoDetect')}</MenuItem>
+                                                        <MenuItem value="zh">{t('whisper.experimentConfig.chinese')}</MenuItem>
+                                                        <MenuItem value="en">{t('whisper.experimentConfig.english')}</MenuItem>
                                                     </Select>
                                                 </FormControl>
                                             </Grid>
@@ -187,19 +189,19 @@ const WhisperExperimentConfig: React.FC = () => {
                                             <Grid item xs={12} md={4}>
                                                 <TextField
                                                     fullWidth
-                                                    label="温度参数"
+                                                    label={t('whisper.experimentConfig.temperature')}
                                                     type="number"
                                                     value={config.temperature}
                                                     onChange={(e) => handleConfigChange('temperature', parseFloat(e.target.value))}
                                                     inputProps={{ min: 0, max: 1, step: 0.1 }}
-                                                    helperText="0-1之间，值越低结果越稳定"
+                                                    helperText={t('whisper.experimentConfig.temperatureHelp')}
                                                 />
                                             </Grid>
 
                                             <Grid item xs={12} md={6}>
                                                 <TextField
                                                     fullWidth
-                                                    label="最大文件大小 (MB)"
+                                                    label={t('whisper.experimentConfig.maxFileSize')}
                                                     type="number"
                                                     value={config.maxFileSize}
                                                     onChange={(e) => handleConfigChange('maxFileSize', parseInt(e.target.value))}
@@ -210,7 +212,7 @@ const WhisperExperimentConfig: React.FC = () => {
                                             <Grid item xs={12} md={6}>
                                                 <TextField
                                                     fullWidth
-                                                    label="最大录音时长 (秒)"
+                                                    label={t('whisper.experimentConfig.maxDuration')}
                                                     type="number"
                                                     value={config.maxDuration}
                                                     onChange={(e) => handleConfigChange('maxDuration', parseInt(e.target.value))}
@@ -227,14 +229,14 @@ const WhisperExperimentConfig: React.FC = () => {
                                             onClick={handleSave}
                                             disabled={isSaving}
                                         >
-                                            {isSaving ? '保存中...' : '保存配置'}
+                                            {isSaving ? t('whisper.experimentConfig.saving') : t('whisper.experimentConfig.saveConfig')}
                                         </Button>
                                     </Grid>
                                 </>
                             ) : (
                                 <Grid item xs={12}>
                                     <Alert severity="info">
-                                        正在加载配置...
+                                        {t('whisper.experimentConfig.loadingConfig')}
                                     </Alert>
                                 </Grid>
                             )}
@@ -246,4 +248,4 @@ const WhisperExperimentConfig: React.FC = () => {
     );
 };
 
-export default WhisperExperimentConfig; 
+export default WhisperExperimentConfig;
