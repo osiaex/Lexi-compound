@@ -594,13 +594,13 @@ const PyLipsPanel: React.FC = () => {
                         <Grid container spacing={3}>
                             <Grid item xs={12} md={6}>
                                 <Typography variant="h6" gutterBottom>
-                                    颜色设置
+                                    {t('pylips.colors')}
                                 </Typography>
                                 <Grid container spacing={2}>
                                     <Grid item xs={12}>
                                         <Box display="flex" alignItems="center" gap={2}>
                                             <Typography variant="body2" sx={{ minWidth: 100 }}>
-                                                背景颜色
+                                                {t('pylips.backgroundColor')}
                                             </Typography>
                                             <TextField
                                                 type="color"
@@ -619,7 +619,7 @@ const PyLipsPanel: React.FC = () => {
                                     <Grid item xs={12}>
                                         <Box display="flex" alignItems="center" gap={2}>
                                             <Typography variant="body2" sx={{ minWidth: 100 }}>
-                                                眼球颜色
+                                                {t('pylips.eyeballColor')}
                                             </Typography>
                                             <TextField
                                                 type="color"
@@ -638,7 +638,7 @@ const PyLipsPanel: React.FC = () => {
                                     <Grid item xs={12}>
                                         <Box display="flex" alignItems="center" gap={2}>
                                             <Typography variant="body2" sx={{ minWidth: 100 }}>
-                                                虹膜颜色
+                                                {t('pylips.irisColor')}
                                             </Typography>
                                             <TextField
                                                 type="color"
@@ -657,7 +657,7 @@ const PyLipsPanel: React.FC = () => {
                                     <Grid item xs={12}>
                                         <Box display="flex" alignItems="center" gap={2}>
                                             <Typography variant="body2" sx={{ minWidth: 100 }}>
-                                                嘴巴颜色
+                                                {t('pylips.mouthColor')}
                                             </Typography>
                                             <TextField
                                                 type="color"
@@ -676,7 +676,7 @@ const PyLipsPanel: React.FC = () => {
                                     <Grid item xs={12}>
                                         <Box display="flex" alignItems="center" gap={2}>
                                             <Typography variant="body2" sx={{ minWidth: 100 }}>
-                                                眉毛颜色
+                                                {t('pylips.browColor')}
                                             </Typography>
                                             <TextField
                                                 type="color"
@@ -697,12 +697,12 @@ const PyLipsPanel: React.FC = () => {
                             
                             <Grid item xs={12} md={6}>
                                 <Typography variant="h6" gutterBottom>
-                                    尺寸设置
+                                    {t('pylips.features')}
                                 </Typography>
                                 <Grid container spacing={2}>
                                     <Grid item xs={12}>
                                         <Typography variant="body2" gutterBottom>
-                                            眼睛大小: {appearanceConfig.eye_size}
+                                            {t('pylips.eyeSize')}: {appearanceConfig.eye_size}
                                         </Typography>
                                         <Box px={2}>
                                             <input
@@ -721,7 +721,7 @@ const PyLipsPanel: React.FC = () => {
                                     </Grid>
                                     <Grid item xs={12}>
                                         <Typography variant="body2" gutterBottom>
-                                            虹膜大小: {appearanceConfig.iris_size}
+                                            {t('pylips.irisSize')}: {appearanceConfig.iris_size}
                                         </Typography>
                                         <Box px={2}>
                                             <input
@@ -740,7 +740,7 @@ const PyLipsPanel: React.FC = () => {
                                     </Grid>
                                     <Grid item xs={12}>
                                         <Typography variant="body2" gutterBottom>
-                                            嘴巴宽度: {appearanceConfig.mouth_width}
+                                            {t('pylips.mouthWidth')}: {appearanceConfig.mouth_width}
                                         </Typography>
                                         <Box px={2}>
                                             <input
@@ -759,7 +759,7 @@ const PyLipsPanel: React.FC = () => {
                                     </Grid>
                                     <Grid item xs={12}>
                                         <Typography variant="body2" gutterBottom>
-                                            眉毛宽度: {appearanceConfig.brow_width}
+                                            {t('pylips.browWidth')}: {appearanceConfig.brow_width}
                                         </Typography>
                                         <Box px={2}>
                                             <input
@@ -778,7 +778,7 @@ const PyLipsPanel: React.FC = () => {
                                     </Grid>
                                     <Grid item xs={12}>
                                         <Typography variant="body2" gutterBottom>
-                                            眉毛高度: {appearanceConfig.brow_height}
+                                            {t('pylips.browHeight')}: {appearanceConfig.brow_height}
                                         </Typography>
                                         <Box px={2}>
                                             <input
@@ -797,7 +797,7 @@ const PyLipsPanel: React.FC = () => {
                                     </Grid>
                                     <Grid item xs={12}>
                                         <Typography variant="body2" gutterBottom>
-                                            鼻子宽度: {appearanceConfig.nose_width}
+                                            {t('pylips.noseWidth')}: {appearanceConfig.nose_width}
                                         </Typography>
                                         <Box px={2}>
                                             <input
@@ -816,7 +816,7 @@ const PyLipsPanel: React.FC = () => {
                                     </Grid>
                                     <Grid item xs={12}>
                                         <Typography variant="body2" gutterBottom>
-                                            鼻子高度: {appearanceConfig.nose_height}
+                                            {t('pylips.noseHeight')}: {appearanceConfig.nose_height}
                                         </Typography>
                                         <Box px={2}>
                                             <input
@@ -835,7 +835,7 @@ const PyLipsPanel: React.FC = () => {
                                     </Grid>
                                     <Grid item xs={12}>
                                         <Typography variant="body2" gutterBottom>
-                                            鼻子垂直位置: {appearanceConfig.nose_vertical_position}
+                                            {t('pylips.noseVerticalPosition')}: {appearanceConfig.nose_vertical_position}
                                         </Typography>
                                         <Box px={2}>
                                             <input
@@ -854,7 +854,7 @@ const PyLipsPanel: React.FC = () => {
                                     </Grid>
                                     <Grid item xs={12}>
                                         <Typography variant="body2" gutterBottom>
-                                            眼睛光泽: {appearanceConfig.eye_shine}
+                                            {t('pylips.eyeShine')}: {appearanceConfig.eye_shine}
                                         </Typography>
                                         <Box px={2}>
                                             <input
@@ -879,13 +879,13 @@ const PyLipsPanel: React.FC = () => {
                         <Grid container spacing={3} sx={{ mt: 2 }}>
                             <Grid item xs={12} md={6}>
                                 <Typography variant="h6" gutterBottom>
-                                    额外颜色设置
+                                    {t('pylips.additionalColors')}
                                 </Typography>
                                 <Grid container spacing={2}>
                                     <Grid item xs={12}>
                                         <Box display="flex" alignItems="center" gap={2}>
                                             <Typography variant="body2" sx={{ minWidth: 100 }}>
-                                                眼睑颜色
+                                                {t('pylips.eyelidColor')}
                                             </Typography>
                                             <TextField
                                                 type="color"
@@ -904,7 +904,7 @@ const PyLipsPanel: React.FC = () => {
                                     <Grid item xs={12}>
                                         <Box display="flex" alignItems="center" gap={2}>
                                             <Typography variant="body2" sx={{ minWidth: 100 }}>
-                                                鼻子颜色
+                                                {t('pylips.noseColor')}
                                             </Typography>
                                             <TextField
                                                 type="color"
@@ -923,7 +923,7 @@ const PyLipsPanel: React.FC = () => {
                                     <Grid item xs={12}>
                                         <Box display="flex" alignItems="center" gap={2}>
                                             <Typography variant="body2" sx={{ minWidth: 100 }}>
-                                                瞳孔颜色
+                                                {t('pylips.pupilColor')}
                                             </Typography>
                                             <TextField
                                                 type="color"
@@ -944,12 +944,12 @@ const PyLipsPanel: React.FC = () => {
                             
                             <Grid item xs={12} md={6}>
                                 <Typography variant="h6" gutterBottom>
-                                    窗口设置
+                                    {t('pylips.windowSettings')}
                                 </Typography>
                                 <Grid container spacing={2}>
                                     <Grid item xs={12}>
                                         <Typography variant="body2" gutterBottom>
-                                            窗口宽度: {appearanceConfig.window_width}px
+                                            {t('pylips.windowWidth')}: {appearanceConfig.window_width}px
                                         </Typography>
                                         <Box px={2}>
                                             <input
@@ -968,7 +968,7 @@ const PyLipsPanel: React.FC = () => {
                                     </Grid>
                                     <Grid item xs={12}>
                                         <Typography variant="body2" gutterBottom>
-                                            窗口高度: {appearanceConfig.window_height}px
+                                            {t('pylips.windowHeight')}: {appearanceConfig.window_height}px
                                         </Typography>
                                         <Box px={2}>
                                             <input
@@ -987,7 +987,7 @@ const PyLipsPanel: React.FC = () => {
                                     </Grid>
                                     <Grid item xs={12}>
                                         <Typography variant="body2" gutterBottom>
-                                            边框圆角: {appearanceConfig.border_radius}px
+                                            {t('pylips.borderRadius')}: {appearanceConfig.border_radius}px
                                         </Typography>
                                         <Box px={2}>
                                             <input
@@ -1006,7 +1006,7 @@ const PyLipsPanel: React.FC = () => {
                                     </Grid>
                                     <Grid item xs={12}>
                                         <Typography variant="body2" gutterBottom>
-                                            阴影强度: {appearanceConfig.shadow_intensity}
+                                            {t('pylips.shadowIntensity')}: {appearanceConfig.shadow_intensity}
                                         </Typography>
                                         <Box px={2}>
                                             <input
