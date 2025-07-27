@@ -68,6 +68,7 @@ const PyLipsPanel: React.FC = () => {
     const [useManualVoiceId, setUseManualVoiceId] = useState(false);
     const [showAppearanceDialog, setShowAppearanceDialog] = useState(false);
     const [appearanceConfig, setAppearanceConfig] = useState({
+        // 面孔外观参数
         background_color: '#D7E4F5',
         eyeball_color: '#ffffff',
         iris_color: '#800080',
@@ -82,8 +83,22 @@ const PyLipsPanel: React.FC = () => {
         mouth_thickness: 18,
         brow_color: '#2c241b',
         brow_width: 130,
-        brow_height: 120,
-        brow_thickness: 18
+        brow_height: 210,
+        brow_thickness: 18,
+        // 窗口和显示参数
+        window_width: 400,
+        window_height: 600,
+        border_radius: 12,
+        shadow_intensity: 0.1,
+        // 眼睑和鼻子参数
+        eyelid_color: '#D7E4F5',
+        nose_color: '#ff99cc',
+        nose_width: 0,
+        nose_height: 0,
+        nose_vertical_position: 10,
+        // 瞳孔和眼睛光泽
+        eye_shine: 50,
+        pupil_color: '#000000'
     });
 
     useEffect(() => {
@@ -247,8 +262,32 @@ const PyLipsPanel: React.FC = () => {
     const handleUpdateAppearance = async () => {
         setIsLoading(true);
         try {
-            const result = await setAppearance(appearanceConfig);
+            // 分离面孔参数和窗口参数
+            const {
+                window_width,
+                window_height,
+                border_radius,
+                shadow_intensity,
+                ...faceParams
+            } = appearanceConfig;
+            
+            // 更新面孔外观
+            const result = await setAppearance(faceParams);
             if (result.success) {
+                // 更新窗口样式（通过事件或localStorage）
+                const windowConfig = {
+                    window_width,
+                    window_height,
+                    border_radius,
+                    shadow_intensity
+                };
+                localStorage.setItem('pylips_window_config', JSON.stringify(windowConfig));
+                
+                // 触发窗口更新事件
+                window.dispatchEvent(new CustomEvent('pylips-window-config-updated', {
+                    detail: windowConfig
+                }));
+                
                 setShowAppearanceDialog(false);
             } else {
                 setError(result.message || t('pylips.errors.updateAppearanceFailed'));
@@ -732,6 +771,253 @@ const PyLipsPanel: React.FC = () => {
                                                 onChange={(e) => setAppearanceConfig({
                                                     ...appearanceConfig,
                                                     brow_width: parseInt(e.target.value)
+                                                })}
+                                                style={{ width: '100%' }}
+                                            />
+                                        </Box>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Typography variant="body2" gutterBottom>
+                                            眉毛高度: {appearanceConfig.brow_height}
+                                        </Typography>
+                                        <Box px={2}>
+                                            <input
+                                                type="range"
+                                                min="100"
+                                                max="300"
+                                                step="10"
+                                                value={appearanceConfig.brow_height}
+                                                onChange={(e) => setAppearanceConfig({
+                                                    ...appearanceConfig,
+                                                    brow_height: parseInt(e.target.value)
+                                                })}
+                                                style={{ width: '100%' }}
+                                            />
+                                        </Box>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Typography variant="body2" gutterBottom>
+                                            鼻子宽度: {appearanceConfig.nose_width}
+                                        </Typography>
+                                        <Box px={2}>
+                                            <input
+                                                type="range"
+                                                min="20"
+                                                max="80"
+                                                step="2"
+                                                value={appearanceConfig.nose_width}
+                                                onChange={(e) => setAppearanceConfig({
+                                                    ...appearanceConfig,
+                                                    nose_width: parseInt(e.target.value)
+                                                })}
+                                                style={{ width: '100%' }}
+                                            />
+                                        </Box>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Typography variant="body2" gutterBottom>
+                                            鼻子高度: {appearanceConfig.nose_height}
+                                        </Typography>
+                                        <Box px={2}>
+                                            <input
+                                                type="range"
+                                                min="30"
+                                                max="100"
+                                                step="2"
+                                                value={appearanceConfig.nose_height}
+                                                onChange={(e) => setAppearanceConfig({
+                                                    ...appearanceConfig,
+                                                    nose_height: parseInt(e.target.value)
+                                                })}
+                                                style={{ width: '100%' }}
+                                            />
+                                        </Box>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Typography variant="body2" gutterBottom>
+                                            鼻子垂直位置: {appearanceConfig.nose_vertical_position}
+                                        </Typography>
+                                        <Box px={2}>
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="900"
+                                                step="5"
+                                                value={appearanceConfig.nose_vertical_position}
+                                                onChange={(e) => setAppearanceConfig({
+                                                    ...appearanceConfig,
+                                                    nose_vertical_position: parseInt(e.target.value)
+                                                })}
+                                                style={{ width: '100%' }}
+                                            />
+                                        </Box>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Typography variant="body2" gutterBottom>
+                                            眼睛光泽: {appearanceConfig.eye_shine}
+                                        </Typography>
+                                        <Box px={2}>
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="100"
+                                                step="5"
+                                                value={appearanceConfig.eye_shine}
+                                                onChange={(e) => setAppearanceConfig({
+                                                    ...appearanceConfig,
+                                                    eye_shine: parseInt(e.target.value)
+                                                })}
+                                                style={{ width: '100%' }}
+                                            />
+                                        </Box>
+                                    </Grid>
+                                </Grid>
+                            </Grid>
+                        </Grid>
+                        
+                        {/* 新增颜色设置 */}
+                        <Grid container spacing={3} sx={{ mt: 2 }}>
+                            <Grid item xs={12} md={6}>
+                                <Typography variant="h6" gutterBottom>
+                                    额外颜色设置
+                                </Typography>
+                                <Grid container spacing={2}>
+                                    <Grid item xs={12}>
+                                        <Box display="flex" alignItems="center" gap={2}>
+                                            <Typography variant="body2" sx={{ minWidth: 100 }}>
+                                                眼睑颜色
+                                            </Typography>
+                                            <TextField
+                                                type="color"
+                                                value={appearanceConfig.eyelid_color}
+                                                onChange={(e) => setAppearanceConfig({
+                                                    ...appearanceConfig,
+                                                    eyelid_color: e.target.value
+                                                })}
+                                                sx={{ width: 60 }}
+                                            />
+                                            <Typography variant="body2" color="textSecondary">
+                                                {appearanceConfig.eyelid_color}
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Box display="flex" alignItems="center" gap={2}>
+                                            <Typography variant="body2" sx={{ minWidth: 100 }}>
+                                                鼻子颜色
+                                            </Typography>
+                                            <TextField
+                                                type="color"
+                                                value={appearanceConfig.nose_color}
+                                                onChange={(e) => setAppearanceConfig({
+                                                    ...appearanceConfig,
+                                                    nose_color: e.target.value
+                                                })}
+                                                sx={{ width: 60 }}
+                                            />
+                                            <Typography variant="body2" color="textSecondary">
+                                                {appearanceConfig.nose_color}
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Box display="flex" alignItems="center" gap={2}>
+                                            <Typography variant="body2" sx={{ minWidth: 100 }}>
+                                                瞳孔颜色
+                                            </Typography>
+                                            <TextField
+                                                type="color"
+                                                value={appearanceConfig.pupil_color}
+                                                onChange={(e) => setAppearanceConfig({
+                                                    ...appearanceConfig,
+                                                    pupil_color: e.target.value
+                                                })}
+                                                sx={{ width: 60 }}
+                                            />
+                                            <Typography variant="body2" color="textSecondary">
+                                                {appearanceConfig.pupil_color}
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                </Grid>
+                            </Grid>
+                            
+                            <Grid item xs={12} md={6}>
+                                <Typography variant="h6" gutterBottom>
+                                    窗口设置
+                                </Typography>
+                                <Grid container spacing={2}>
+                                    <Grid item xs={12}>
+                                        <Typography variant="body2" gutterBottom>
+                                            窗口宽度: {appearanceConfig.window_width}px
+                                        </Typography>
+                                        <Box px={2}>
+                                            <input
+                                                type="range"
+                                                min="400"
+                                                max="1200"
+                                                step="20"
+                                                value={appearanceConfig.window_width}
+                                                onChange={(e) => setAppearanceConfig({
+                                                    ...appearanceConfig,
+                                                    window_width: parseInt(e.target.value)
+                                                })}
+                                                style={{ width: '100%' }}
+                                            />
+                                        </Box>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Typography variant="body2" gutterBottom>
+                                            窗口高度: {appearanceConfig.window_height}px
+                                        </Typography>
+                                        <Box px={2}>
+                                            <input
+                                                type="range"
+                                                min="300"
+                                                max="900"
+                                                step="20"
+                                                value={appearanceConfig.window_height}
+                                                onChange={(e) => setAppearanceConfig({
+                                                    ...appearanceConfig,
+                                                    window_height: parseInt(e.target.value)
+                                                })}
+                                                style={{ width: '100%' }}
+                                            />
+                                        </Box>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Typography variant="body2" gutterBottom>
+                                            边框圆角: {appearanceConfig.border_radius}px
+                                        </Typography>
+                                        <Box px={2}>
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="50"
+                                                step="2"
+                                                value={appearanceConfig.border_radius}
+                                                onChange={(e) => setAppearanceConfig({
+                                                    ...appearanceConfig,
+                                                    border_radius: parseInt(e.target.value)
+                                                })}
+                                                style={{ width: '100%' }}
+                                            />
+                                        </Box>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Typography variant="body2" gutterBottom>
+                                            阴影强度: {appearanceConfig.shadow_intensity}
+                                        </Typography>
+                                        <Box px={2}>
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="10"
+                                                step="1"
+                                                value={appearanceConfig.shadow_intensity}
+                                                onChange={(e) => setAppearanceConfig({
+                                                    ...appearanceConfig,
+                                                    shadow_intensity: parseInt(e.target.value)
                                                 })}
                                                 style={{ width: '100%' }}
                                             />

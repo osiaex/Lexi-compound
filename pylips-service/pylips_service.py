@@ -84,30 +84,73 @@ class PyLipsService:
             return True
             
         try:
+            # 检查端口8000是否已被占用
+            import socket
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            result = sock.connect_ex(('localhost', 8000))
+            sock.close()
+            
+            if result == 0:
+                logger.info("端口8000已被占用，假设PyLips面孔服务器已在运行")
+                self.face_server_running = True
+                return True
+            
             # 启动PyLips面孔服务器
             import subprocess
             env = os.environ.copy()
             env['PYTHONPATH'] = os.path.join(os.path.dirname(__file__), '..', '..', 'PyLips')
             
-            self.face_server_process = subprocess.Popen([
-                sys.executable, '-m', 'pylips.face.start'
-            ], env=env, cwd=os.path.join(os.path.dirname(__file__), '..', '..', 'PyLips'),
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            # 使用更详细的启动命令
+            cmd = [sys.executable, '-m', 'pylips.face.start', '--host', '0.0.0.0', '--port', '8000']
+            logger.info(f"启动命令: {' '.join(cmd)}")
+            logger.info(f"工作目录: {os.path.join(os.path.dirname(__file__), '..', '..', 'PyLips')}")
             
-            # 等待服务器启动
-            time.sleep(3)
+            self.face_server_process = subprocess.Popen(
+                cmd,
+                env=env, 
+                cwd=os.path.join(os.path.dirname(__file__), '..', '..', 'PyLips'),
+                stdout=subprocess.PIPE, 
+                stderr=subprocess.PIPE, 
+                text=True
+            )
             
-            # 检查进程是否仍在运行
-            if self.face_server_process.poll() is not None:
-                # 进程已退出，捕获输出
-                out, err = self.face_server_process.communicate()
-                logger.error(f"PyLips面孔服务器启动失败，已退出。输出: {out}\n错误: {err}")
-                self.face_server_running = False
-                return False
+            # 等待服务器启动并检查状态
+            for i in range(10):  # 最多等待10秒
+                time.sleep(1)
                 
-            self.face_server_running = True
-            logger.info("PyLips面孔服务器已启动")
-            return True
+                # 检查进程是否仍在运行
+                if self.face_server_process.poll() is not None:
+                    # 进程已退出，捕获输出
+                    out, err = self.face_server_process.communicate()
+                    logger.error(f"PyLips面孔服务器启动失败，已退出。输出: {out}\n错误: {err}")
+                    self.face_server_running = False
+                    return False
+                
+                # 检查端口是否可用
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                result = sock.connect_ex(('localhost', 8000))
+                sock.close()
+                
+                if result == 0:
+                    self.face_server_running = True
+                    logger.info(f"PyLips面孔服务器已启动 (等待了{i+1}秒)")
+                    return True
+                    
+                logger.info(f"等待PyLips面孔服务器启动... ({i+1}/10)")
+            
+            # 超时后检查进程状态
+            if self.face_server_process.poll() is None:
+                logger.warning("PyLips面孔服务器进程仍在运行，但端口8000不可访问")
+                # 尝试获取部分输出用于调试
+                try:
+                    out, err = self.face_server_process.communicate(timeout=1)
+                    logger.info(f"服务器输出: {out}")
+                    if err:
+                        logger.warning(f"服务器错误: {err}")
+                except subprocess.TimeoutExpired:
+                    logger.info("服务器仍在运行，无法获取输出")
+            
+            return False
                 
         except Exception as e:
             logger.error(f"启动PyLips面孔服务器失败: {e}")
@@ -144,16 +187,49 @@ class PyLipsService:
         if not RobotFace:
             logger.info(f"PyLips不可用，仅更新TTS配置 - TTS方法: {tts_method}, 语音ID: {voice_id}")
             return True
+        
+        # 确保面孔服务器正在运行
+        if not self.face_server_running:
+            logger.info("面孔服务器未运行，尝试启动...")
+            if not self.start_face_server():
+                logger.error("无法启动面孔服务器，跳过PyLips面孔初始化")
+                return True  # 仍然返回True，因为TTS配置已更新
             
         try:
-            self.face = RobotFace(
-                robot_name='LEXI',
-                server_ip='http://localhost:8000',
-                tts_method=tts_method,
-                voice_id=voice_id
-            )
-            logger.info(f"机器人面孔已初始化 - TTS方法: {tts_method}, 语音ID: {voice_id}")
-            return True
+            # 多次尝试初始化，因为服务器可能需要时间完全启动
+            for attempt in range(3):
+                try:
+                    logger.info(f"尝试初始化PyLips面孔 (第{attempt+1}次)...")
+                    self.face = RobotFace(
+                        robot_name='LEXI',
+                        server_ip='http://localhost:8000',
+                        tts_method=tts_method,
+                        voice_id=voice_id
+                    )
+                    
+                    # 测试连接
+                    if hasattr(self.face, 'io'):
+                        # 等待连接建立
+                        time.sleep(2)
+                        if hasattr(self.face.io, 'connected') and self.face.io.connected:
+                            logger.info(f"机器人面孔已成功初始化并连接 - TTS方法: {tts_method}, 语音ID: {voice_id}")
+                            return True
+                        else:
+                            logger.warning(f"第{attempt+1}次尝试：Socket.IO连接未建立")
+                    else:
+                        logger.info(f"机器人面孔已初始化 (无Socket.IO检查) - TTS方法: {tts_method}, 语音ID: {voice_id}")
+                        return True
+                        
+                except Exception as attempt_e:
+                    logger.warning(f"第{attempt+1}次初始化尝试失败: {attempt_e}")
+                    if attempt < 2:  # 不是最后一次尝试
+                        time.sleep(2)  # 等待后重试
+                        continue
+                    else:
+                        raise attempt_e
+            
+            logger.error("所有初始化尝试都失败了")
+            return True  # 仍然返回True，因为TTS配置已更新
             
         except Exception as e:
             logger.error(f"初始化机器人面孔失败: {e}")
@@ -286,12 +362,35 @@ class PyLipsService:
             return False
             
         try:
+            # 检查Socket.IO连接状态
+            if hasattr(self.face, 'io') and hasattr(self.face.io, 'connected'):
+                if not self.face.io.connected:
+                    logger.error("Socket.IO连接已断开，尝试重新连接...")
+                    try:
+                        self.face.io.connect()
+                        time.sleep(1)  # 等待连接建立
+                    except Exception as conn_e:
+                        logger.error(f"重新连接失败: {conn_e}")
+                        return False
+            
             self.face.set_appearance(appearance_config)
             logger.info(f"面孔外观已更新: {appearance_config}")
             return True
             
         except Exception as e:
             logger.error(f"设置面孔外观失败: {e}")
+            # 如果是连接问题，尝试重新初始化面孔
+            if "not a connected namespace" in str(e) or "connection" in str(e).lower():
+                logger.info("检测到连接问题，尝试重新初始化面孔...")
+                try:
+                    self.initialize_face(self.current_voice_id, self.tts_method)
+                    time.sleep(2)  # 等待初始化完成
+                    if self.face:
+                        self.face.set_appearance(appearance_config)
+                        logger.info(f"重新初始化后面孔外观已更新: {appearance_config}")
+                        return True
+                except Exception as reinit_e:
+                    logger.error(f"重新初始化失败: {reinit_e}")
             return False
 
 # 全局服务实例

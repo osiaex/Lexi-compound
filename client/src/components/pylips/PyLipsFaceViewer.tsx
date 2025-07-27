@@ -24,7 +24,7 @@ import { checkPyLipsHealth, startPyLipsService, stopSpeech } from '@DAL/server-r
 const FaceContainer = styled(Box)({
     position: 'relative',
     width: '100%',
-    height: '400px',
+    height: '600px',
     borderRadius: '12px',
     overflow: 'hidden',
     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
@@ -68,6 +68,13 @@ interface PyLipsFaceViewerProps {
     conversationId?: string;
 }
 
+interface WindowConfig {
+    window_width: number;
+    window_height: number;
+    border_radius: number;
+    shadow_intensity: number;
+}
+
 const PyLipsFaceViewer: React.FC<PyLipsFaceViewerProps> = ({
     isVisible,
     onToggleVisibility,
@@ -78,6 +85,12 @@ const PyLipsFaceViewer: React.FC<PyLipsFaceViewerProps> = ({
     const [isConnected, setIsConnected] = useState(false);
     const [error, setError] = useState<string>('');
     const [isMuted, setIsMuted] = useState(false);
+    const [windowConfig, setWindowConfig] = useState<WindowConfig>({
+        window_width: 800,
+        window_height: 600,
+        border_radius: 12,
+        shadow_intensity: 4
+    });
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const { t } = useLanguage();
 
@@ -86,6 +99,32 @@ const PyLipsFaceViewer: React.FC<PyLipsFaceViewerProps> = ({
             initializePyLips();
         }
     }, [isVisible]);
+
+    // 监听窗口配置更新事件
+    useEffect(() => {
+        const handleWindowConfigUpdate = (event: CustomEvent) => {
+            const newConfig = event.detail as WindowConfig;
+            setWindowConfig(newConfig);
+        };
+
+        // 从localStorage加载初始配置
+        const savedConfig = localStorage.getItem('pylips_window_config');
+        if (savedConfig) {
+            try {
+                const config = JSON.parse(savedConfig) as WindowConfig;
+                setWindowConfig(config);
+            } catch (err) {
+                console.error('解析窗口配置失败:', err);
+            }
+        }
+
+        // 添加事件监听器
+        window.addEventListener('pylips-window-config-updated', handleWindowConfigUpdate as EventListener);
+
+        return () => {
+            window.removeEventListener('pylips-window-config-updated', handleWindowConfigUpdate as EventListener);
+        };
+    }, []);
 
     const initializePyLips = async () => {
         setIsLoading(true);
@@ -186,7 +225,14 @@ const PyLipsFaceViewer: React.FC<PyLipsFaceViewerProps> = ({
                             </Alert>
                         )}
 
-                        <FaceContainer>
+                        <FaceContainer
+                            sx={{
+                                width: `${windowConfig.window_width}px`,
+                                height: `${windowConfig.window_height}px`,
+                                borderRadius: `${windowConfig.border_radius}px`,
+                                boxShadow: `0 4px ${windowConfig.shadow_intensity * 3}px rgba(0, 0, 0, 0.${windowConfig.shadow_intensity})`
+                            }}
+                        >
                             <StatusBadge status={getStatusType()}>
                                 {getStatusText()}
                             </StatusBadge>
@@ -241,6 +287,9 @@ const PyLipsFaceViewer: React.FC<PyLipsFaceViewerProps> = ({
                                         setError(t('pylips.faceViewer.loadFailed'));
                                         setIsLoading(false);
                                         setIsConnected(false);
+                                    }}
+                                    style={{
+                                        borderRadius: `${windowConfig.border_radius}px`
                                     }}
                                 />
                             )}
