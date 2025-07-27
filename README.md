@@ -12,9 +12,9 @@ This platform is designed to facilitate advanced research in the field of user-b
 
 ## 🎯 Features
 
+### Core Features
 - **Multi-Agent Conversations**: Support for single-agent or A/B testing with multiple AI agents
 - **Real-time Chat**: Seamless conversation flow with streaming message support
-- **AI Avatar Integration**: Interactive D-ID digital avatars for enhanced user experience
 - **User Annotations**: Collect user feedback and reactions during conversations
 - **Flexible Forms**: Customizable pre and post-conversation questionnaires
 - **Experiment Management**: Comprehensive admin panel for managing experiments and participants
@@ -22,18 +22,43 @@ This platform is designed to facilitate advanced research in the field of user-b
 - **Responsive Design**: Optimized for both desktop and mobile devices
 - **Multiple AI Providers**: Support for OpenAI and DeepSeek APIs
 
+### Advanced Features
+- **🎤 Whisper Speech-to-Text**: Real-time audio transcription with support for multiple languages
+  - Multiple model sizes (tiny ~39MB, small ~244MB)
+  - Auto language detection or manual selection (English/Chinese)
+  - Configurable accuracy vs speed trade-offs
+  - Secure audio processing with automatic cleanup
+
+- **🤖 PyLips Digital Avatars**: Interactive digital humans with facial expressions and lip-sync
+  - Real-time facial animation and lip synchronization
+  - Emotion-based expression selection
+  - Multiple TTS engines (System TTS, Amazon Polly)
+  - Customizable voice settings and languages
+  - Non-blocking audio playback
+
+- **🎭 AI Avatar Integration**: Enhanced D-ID digital avatars for premium user experience
+
 ## 🚀 Quick Start
 
 To set up and start using the project, follow these steps:
 
 ### Step 0: Download the following pre-requirements:
 
-Node.JS - <a href="https://nodejs.org/en">https://nodejs.org/en</a><br>
-Npm - <a href="https://docs.npmjs.com/downloading-and-installing-node-js-and-npm">https://docs.npmjs.com/downloading-and-installing-node-js-and-npm</a><br>
-Git - <a href ="https://git-scm.com/downloads">https://git-scm.com/downloads</a>
-AI API key - Choose one:
-- OpenAI API key - <a href ="https://help.openai.com/en/articles/4936850-where-do-i-find-my-api-key">OpenAI API key info</a>
-- DeepSeek API key - <a href ="https://platform.deepseek.com/api_keys">DeepSeek API key info</a>
+**Core Requirements:**
+- Node.JS 16+ - <a href="https://nodejs.org/en">https://nodejs.org/en</a>
+- Python 3.8+ - <a href="https://www.python.org/downloads/">https://www.python.org/downloads/</a>
+- Git - <a href ="https://git-scm.com/downloads">https://git-scm.com/downloads</a>
+- AI API key - Choose one:
+  - OpenAI API key - <a href ="https://help.openai.com/en/articles/4936850-where-do-i-find-my-api-key">OpenAI API key info</a>
+  - DeepSeek API key - <a href ="https://platform.deepseek.com/api_keys">DeepSeek API key info</a>
+
+**Optional Requirements (for advanced features):**
+- FFmpeg - For audio processing (Whisper)
+  - Windows: `choco install ffmpeg` or download from [FFmpeg.org](https://ffmpeg.org/download.html)
+  - Linux: `sudo apt install ffmpeg`
+  - macOS: `brew install ffmpeg`
+- PyLips dependencies (for digital avatar):
+  - Linux: `sudo apt update && sudo apt install espeak-ng ffmpeg libespeak1`
 
 ### Step 1: Set Up MongoDB Database
 
@@ -95,28 +120,121 @@ The setup script automates several important tasks to get your server up and run
 
 This comprehensive setup ensures that all necessary components are correctly configured, laying the foundation for a smooth and efficient operation of the server.
 
-### Step 4: Running the Project
+### Step 4: Set Up Advanced Features (Optional)
 
-- For the Client:
-    ```bash
-    cd client
-    npm start
-    ```
+#### 4.1 Whisper Speech-to-Text Setup
 
-**client will run on: http://localhost:3000**
+Whisper enables real-time speech transcription in conversations.
 
-- For the Server:
-    ```bash
-    cd server
-    npm run dev
-    ``` 
-**server will run on: http://localhost:5000**
+1. **Create Python Virtual Environment:**
+   ```bash
+   cd server
+   python -m venv whisper_env
+   ```
+
+2. **Activate Virtual Environment:**
+   ```bash
+   # Windows:
+   whisper_env\Scripts\activate
+   
+   # Linux/macOS:
+   source whisper_env/bin/activate
+   ```
+
+3. **Install Whisper Dependencies:**
+   ```bash
+   pip install openai-whisper torch torchvision torchaudio
+   ```
+
+4. **Download Whisper Models:**
+   ```bash
+   # Download tiny model (~39MB, fast processing)
+   python -c "import whisper; whisper.load_model('tiny')"
+   
+   # Download small model (~244MB, better accuracy)
+   python -c "import whisper; whisper.load_model('small')"
+   ```
+
+#### 4.2 PyLips Digital Avatar Setup
+
+PyLips provides interactive digital avatars with facial expressions and lip-sync.
+
+1. **Install PyLips Service Dependencies:**
+   ```bash
+   cd pylips-service
+   pip install -r requirements.txt
+   ```
+
+2. **Start PyLips Service:**
+   ```bash
+   # Windows:
+   start.bat
+   
+   # Linux/macOS:
+   chmod +x start.sh
+   ./start.sh
+   
+   # Or manually:
+   python pylips_service.py
+   ```
+
+   **PyLips service will run on: http://localhost:3001**
+
+### Step 5: Running the Project
+
+1. **Start the Server:**
+   ```bash
+   cd server
+   npm run dev
+   ```
+   **Server will run on: http://localhost:5000**
+
+2. **Start the Client:**
+   ```bash
+   cd client
+   npm start
+   ```
+   **Client will run on: http://localhost:3000**
+
+3. **Start PyLips Service (if using digital avatars):**
+   ```bash
+   cd pylips-service
+   python pylips_service.py
+   ```
+   **PyLips service will run on: http://localhost:3001**
+
+### 🔧 Feature Configuration
+
+#### Whisper Configuration
+- Access admin panel at `/admin`
+- Navigate to "Whisper" section
+- Configure model size (tiny/small)
+- Set language preferences (auto/en/zh)
+- Adjust transcription settings
+
+#### PyLips Configuration
+- Access admin panel at `/admin`
+- Navigate to "PyLips" section
+- Test voice synthesis
+- Configure facial expressions
+- Adjust TTS settings
 
 Encountering difficulties with your local environment setup? Consult our [Troubleshooting Guide](TROUBLESHOOTING.md) for assistance in resolving your issues.
 
 ## 🌐 Deployment
 
-Intersted to deploy Lexi? Please read our [Deployment Guide](DEPLOYMENT.md) for information on how to deploy.
+Interested in deploying LEXI? We provide comprehensive deployment guides:
+
+- **[Main Deployment Guide](DEPLOYMENT.md)** - Core LEXI platform deployment
+- **[PyLips Integration Guide](PYLIPS_INTEGRATION_GUIDE.md)** - Digital avatar setup and configuration
+- **Whisper Setup** - Speech-to-text configuration (see Step 4.1 above)
+
+### Production Considerations
+
+- **Whisper**: Requires Python 3.8+ and sufficient disk space for models
+- **PyLips**: Needs audio system access and may require additional system dependencies
+- **Performance**: Consider using GPU acceleration for Whisper in high-traffic environments
+- **Security**: Ensure proper firewall configuration for additional service ports (3001 for PyLips)
 
 ## 🛠️ Contributing
 
