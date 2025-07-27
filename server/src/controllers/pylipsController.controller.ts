@@ -24,6 +24,21 @@ class PyLipsController {
     });
 
     /**
+     * 获取可用语音包列表
+     */
+    getVoices = requestHandler(async (req: Request, res: Response) => {
+        const ttsMethod = req.query.tts_method as 'system' | 'polly' || 'system';
+        
+        const voices = await pylipsService.getVoices(ttsMethod);
+        
+        res.status(200).json({
+            success: true,
+            voices,
+            tts_method: ttsMethod
+        });
+    });
+
+    /**
      * 启动PyLips服务
      */
     startService = requestHandler(async (req: Request, res: Response) => {
@@ -200,4 +215,4 @@ class PyLipsController {
     });
 }
 
-export const pylipsController = new PyLipsController(); 
+export const pylipsController = new PyLipsController();

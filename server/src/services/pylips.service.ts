@@ -496,6 +496,48 @@ class PyLipsService {
     }
 
     /**
+     * 获取可用语音包列表
+     */
+    async getVoices(ttsMethod: 'system' | 'polly' = 'system'): Promise<string[]> {
+        try {
+            // 检查服务可用性
+            if (!this.isConnected && !(await this.isServiceAvailable())) {
+                console.warn('⚠️ PyLips服务不可用，语音列表查询将被跳过');
+                return [];
+            }
+
+            console.log(`🎤 正在获取${ttsMethod}语音包列表...`);
+            const response: AxiosResponse<{success: boolean, voices: string[], tts_method: string}> = await axios.get(
+                `${this.baseUrl}/voices`,
+                { 
+                    params: { tts_method: ttsMethod },
+                    timeout: 10000,
+                    validateStatus: (status) => status >= 200 && status < 300
+                }
+            );
+            
+            if (response.data.success) {
+                console.log(`✅ ${ttsMethod}语音包列表获取成功，共${response.data.voices.length}个语音`);
+                return response.data.voices;
+            } else {
+                console.warn('⚠️ 语音包列表获取返回失败状态');
+                return [];
+            }
+        } catch (error) {
+            if (error.code === 'ETIMEDOUT') {
+                console.error('❌ 语音包列表查询超时');
+            } else if (error.response) {
+                console.error('❌ 语音包列表查询失败:', error.response.status, error.response.data);
+            } else if (error.code === 'ECONNREFUSED') {
+                console.warn('⚠️ PyLips服务连接被拒绝，服务可能未启动');
+            } else {
+                console.error('❌ 语音包列表查询出现未知错误:', error.message);
+            }
+            return [];
+        }
+    }
+
+    /**
      * 智能表情选择 - 基于文本内容选择合适的表情
      */
     getExpressionFromText(text: string): 'happy' | 'sad' | 'surprised' | 'angry' | 'neutral' {

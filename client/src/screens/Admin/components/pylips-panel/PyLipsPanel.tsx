@@ -19,6 +19,8 @@ import {
     DialogActions,
     CircularProgress,
     Divider,
+    FormControlLabel,
+    Switch,
 } from '@mui/material';
 import {
     PlayArrow,
@@ -42,8 +44,10 @@ import {
     setExpression,
     lookAt,
     updatePyLipsConfig,
+    getPyLipsVoices,
     type PyLipsStatus,
-    type PyLipsConfig 
+    type PyLipsConfig,
+    type VoiceInfo
 } from '@DAL/server-requests/pylips';
 
 const PyLipsPanel: React.FC = () => {
@@ -58,6 +62,8 @@ const PyLipsPanel: React.FC = () => {
     });
     const [showConfigDialog, setShowConfigDialog] = useState(false);
     const [isServiceHealthy, setIsServiceHealthy] = useState(false);
+    const [availableVoices, setAvailableVoices] = useState<VoiceInfo[]>([]);
+    const [useManualVoiceId, setUseManualVoiceId] = useState(false);
 
     useEffect(() => {
         refreshStatus();
@@ -175,6 +181,22 @@ const PyLipsPanel: React.FC = () => {
         }
     };
 
+    const loadVoices = async (ttsMethod?: string) => {
+          try {
+              const method = ttsMethod || config.tts_method || 'system';
+              const validMethod = (method === 'polly' ? 'polly' : 'system') as 'system' | 'polly';
+              const result = await getPyLipsVoices(validMethod);
+              if (result.success && result.voices) {
+                  setAvailableVoices(result.voices);
+              } else {
+                  setAvailableVoices([]);
+              }
+          } catch (err) {
+              console.error('Failed to load voices:', err);
+              setAvailableVoices([]);
+          }
+      };
+
     const handleUpdateConfig = async () => {
         setIsLoading(true);
         try {
@@ -190,6 +212,11 @@ const PyLipsPanel: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleConfigDialogOpen = () => {
+        setShowConfigDialog(true);
+        loadVoices();
     };
 
     const getStatusColor = () => {
@@ -280,7 +307,7 @@ const PyLipsPanel: React.FC = () => {
                                 <Button
                                     variant="outlined"
                                     startIcon={<Settings />}
-                                    onClick={() => setShowConfigDialog(true)}
+                                    onClick={handleConfigDialogOpen}
                                     disabled={isLoading}
                                 >
                                     {t('pylips.config')}
@@ -397,25 +424,65 @@ const PyLipsPanel: React.FC = () => {
                                 <FormControl fullWidth>
                                     <InputLabel>{t('pylips.ttsMethod')}</InputLabel>
                                     <Select
-                                        value={config.tts_method}
-                                        label={t('pylips.ttsMethod')}
-                                        onChange={(e) => setConfig({...config, tts_method: e.target.value as any})}
-                                    >
+                                         value={config.tts_method}
+                                         label={t('pylips.ttsMethod')}
+                                         onChange={(e) => {
+                                             const newMethod = e.target.value as any;
+                                             setConfig({...config, tts_method: newMethod, voice_id: undefined});
+                                             loadVoices(newMethod);
+                                         }}
+                                     >
                                         <MenuItem value="system">{t('pylips.systemTts')}</MenuItem>
                             <MenuItem value="polly">{t('pylips.amazonPolly')}</MenuItem>
                                     </Select>
                                 </FormControl>
                             </Grid>
                             <Grid item xs={12}>
-                                <TextField
-                                    fullWidth
-                                    label={t('pylips.voiceId')}
-                                    value={config.voice_id || ''}
-                                    onChange={(e) => setConfig({...config, voice_id: e.target.value || undefined})}
-                                    placeholder={t('pylips.voiceIdPlaceholder')}
-                        helperText={t('pylips.voiceIdHelper')}
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            checked={useManualVoiceId}
+                                            onChange={(e) => {
+                                                setUseManualVoiceId(e.target.checked);
+                                                if (!e.target.checked) {
+                                                    setConfig({...config, voice_id: undefined});
+                                                }
+                                            }}
+                                        />
+                                    }
+                                    label={t('pylips.useManualVoiceId')}
                                 />
                             </Grid>
+                            {useManualVoiceId ? (
+                                <Grid item xs={12}>
+                                    <TextField
+                                        fullWidth
+                                        label={t('pylips.voiceId')}
+                                        value={config.voice_id || ''}
+                                        onChange={(e) => setConfig({...config, voice_id: e.target.value || undefined})}
+                                        placeholder={t('pylips.voiceIdPlaceholder')}
+                                        helperText={t('pylips.voiceIdHelper')}
+                                    />
+                                </Grid>
+                            ) : (
+                                <Grid item xs={12}>
+                                    <FormControl fullWidth>
+                                        <InputLabel>{t('pylips.selectVoice')}</InputLabel>
+                                        <Select
+                                            value={config.voice_id || ''}
+                                            label={t('pylips.selectVoice')}
+                                            onChange={(e) => setConfig({...config, voice_id: e.target.value || undefined})}
+                                        >
+                                            <MenuItem value="">{t('pylips.defaultVoice')}</MenuItem>
+                                            {availableVoices.map((voice) => (
+                                                <MenuItem key={voice.id} value={voice.id}>
+                                                    {voice.name} ({voice.id})
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+                                </Grid>
+                            )}
                         </Grid>
                     </Box>
                 </DialogContent>

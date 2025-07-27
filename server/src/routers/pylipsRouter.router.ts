@@ -22,9 +22,10 @@ export const pylipsRouter = () => {
     
     // 配置管理
     router.post('/config', pylipsController.updateConfig);
+    router.get('/voices', pylipsController.getVoices);
     
     // 健康检查
     router.get('/health', pylipsController.healthCheck);
 
     return router;
-}; 
+};

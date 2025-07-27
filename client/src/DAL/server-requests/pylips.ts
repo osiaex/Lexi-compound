@@ -145,4 +145,29 @@ export const updatePyLipsConfig = async (config: PyLipsConfig): Promise<PyLipsRe
     } catch (error) {
         throw error;
     }
-}; 
+};
+
+export interface VoiceInfo {
+    id: string;
+    name: string;
+}
+
+export interface PyLipsVoicesResponse {
+    success: boolean;
+    voices: VoiceInfo[];
+    tts_method: string;
+}
+
+/**
+ * 获取可用语音包列表
+ */
+export const getPyLipsVoices = async (ttsMethod: 'system' | 'polly' = 'system'): Promise<PyLipsVoicesResponse> => {
+    try {
+        const response = await axiosInstance.get('/pylips/voices', {
+            params: { tts_method: ttsMethod }
+        });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};

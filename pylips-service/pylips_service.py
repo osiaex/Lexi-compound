@@ -34,6 +34,13 @@ except ImportError:
     print("警告: pyttsx3不可用，TTS功能将受限")
     PYTTSX3_AVAILABLE = False
 
+# Windows SAPI TTS备用实现
+try:
+    import win32com.client
+    WIN32_SAPI_AVAILABLE = True
+except ImportError:
+    WIN32_SAPI_AVAILABLE = False
+
 app = Flask(__name__)
 CORS(app, origins=["http://localhost:3000", "http://localhost:5000"])  # 允许前端和LEXI后端访问
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -50,14 +57,25 @@ class PyLipsService:
         self.current_voice_id = None
         self.tts_method = 'system'
         self.fallback_tts = None
+        self.sapi_tts = None
+        self.tts_lock = threading.Lock()  # 添加线程锁确保TTS线程安全
         
-        # 初始化备用TTS（始终尝试初始化）
-        if PYTTSX3_AVAILABLE:
+        # 初始化Windows SAPI TTS（优先使用，更稳定）
+        if WIN32_SAPI_AVAILABLE:
+            try:
+                self.sapi_tts = win32com.client.Dispatch("SAPI.SpVoice")
+                logger.info("Windows SAPI TTS引擎已初始化")
+            except Exception as e:
+                logger.error(f"初始化Windows SAPI TTS失败: {e}")
+                self.sapi_tts = None
+        
+        # 初始化pyttsx3备用TTS（作为第二选择）
+        if PYTTSX3_AVAILABLE and not self.sapi_tts:
             try:
                 self.fallback_tts = pyttsx3.init()
-                logger.info("备用TTS引擎已初始化")
+                logger.info("pyttsx3备用TTS引擎已初始化")
             except Exception as e:
-                logger.error(f"初始化备用TTS失败: {e}")
+                logger.error(f"初始化pyttsx3备用TTS失败: {e}")
                 self.fallback_tts = None
         
     def start_face_server(self):
@@ -105,8 +123,27 @@ class PyLipsService:
     
     def initialize_face(self, voice_id=None, tts_method='system'):
         """初始化机器人面孔"""
+        # 更新当前配置
+        self.current_voice_id = voice_id
+        self.tts_method = tts_method
+        
+        # 如果有Windows SAPI TTS，立即更新语音设置
+        if self.sapi_tts and voice_id:
+            try:
+                voice_tokens = self.sapi_tts.GetVoices()
+                for i in range(voice_tokens.Count):
+                    voice = voice_tokens.Item(i)
+                    if voice.Id == voice_id:
+                        self.sapi_tts.Voice = voice
+                        logger.info(f"Windows SAPI TTS语音已更新: {voice.GetDescription()}")
+                        break
+            except Exception as ve:
+                logger.warning(f"更新Windows SAPI语音失败: {ve}")
+        
+        # 初始化PyLips面孔（如果可用）
         if not RobotFace:
-            return False
+            logger.info(f"PyLips不可用，仅更新TTS配置 - TTS方法: {tts_method}, 语音ID: {voice_id}")
+            return True
             
         try:
             self.face = RobotFace(
@@ -115,14 +152,13 @@ class PyLipsService:
                 tts_method=tts_method,
                 voice_id=voice_id
             )
-            self.current_voice_id = voice_id
-            self.tts_method = tts_method
             logger.info(f"机器人面孔已初始化 - TTS方法: {tts_method}, 语音ID: {voice_id}")
             return True
             
         except Exception as e:
             logger.error(f"初始化机器人面孔失败: {e}")
-            return False
+            # 即使PyLips初始化失败，配置更新仍然成功
+            return True
     
     def speak(self, text, wait=False):
         """让机器人说话"""
@@ -135,21 +171,49 @@ class PyLipsService:
             except Exception as e:
                 logger.error(f"PyLips语音播放失败: {e}")
         
-        # 备用TTS
-        if self.fallback_tts:
+        # 优先使用Windows SAPI TTS（更稳定，无线程冲突）
+        if self.sapi_tts:
             try:
-                self.fallback_tts.say(text)
                 if wait:
-                    self.fallback_tts.runAndWait()
+                    # 同步模式
+                    self.sapi_tts.Speak(text)
                 else:
-                    # 在新线程中运行以避免阻塞
-                    def speak_async():
-                        self.fallback_tts.runAndWait()
-                    threading.Thread(target=speak_async, daemon=True).start()
-                logger.info(f"备用TTS播放: {text[:50]}...")
+                    # 异步模式：SAPI支持异步播放，无需额外线程处理
+                    self.sapi_tts.Speak(text, 1)  # 1表示异步播放
+                
+                # 获取当前使用的语音信息用于日志
+                current_voice_name = "默认语音"
+                try:
+                    current_voice_name = self.sapi_tts.Voice.GetDescription()
+                except:
+                    pass
+                logger.info(f"Windows SAPI TTS播放 ({current_voice_name}): {text[:50]}...")
                 return True
             except Exception as e:
-                logger.error(f"备用TTS播放失败: {e}")
+                logger.error(f"Windows SAPI TTS播放失败: {e}")
+        
+        # 备用TTS（pyttsx3）
+        if self.fallback_tts:
+            try:
+                if wait:
+                    # 同步模式：使用主TTS引擎
+                    with self.tts_lock:
+                        self.fallback_tts.say(text)
+                        self.fallback_tts.runAndWait()
+                else:
+                    # 异步模式：创建独立的TTS引擎实例避免冲突
+                    def speak_async():
+                        try:
+                            async_tts = pyttsx3.init()
+                            async_tts.say(text)
+                            async_tts.runAndWait()
+                        except Exception as e:
+                            logger.error(f"异步TTS播放失败: {e}")
+                    threading.Thread(target=speak_async, daemon=True).start()
+                logger.info(f"pyttsx3备用TTS播放: {text[:50]}...")
+                return True
+            except Exception as e:
+                logger.error(f"pyttsx3备用TTS播放失败: {e}")
         
         logger.error("所有TTS方法都不可用")
         return False
@@ -388,6 +452,93 @@ def get_status():
         'tts_method': pylips_service.tts_method
     })
 
+@app.route('/voices', methods=['GET'])
+def get_voices():
+    """获取可用语音包列表"""
+    try:
+        tts_method = request.args.get('tts_method', 'system')
+        
+        if tts_method == 'system':
+            # 获取系统TTS语音列表
+            if PYLIPS_AVAILABLE:
+                from pylips.speech import SystemTTS
+                system_tts = SystemTTS()
+                raw_voices = system_tts.voices
+                voices = [{'id': voice, 'name': voice} for voice in raw_voices]
+            elif WIN32_SAPI_AVAILABLE:
+                # 优先使用Windows SAPI获取语音列表
+                try:
+                    sapi_voices = win32com.client.Dispatch("SAPI.SpVoice")
+                    voice_tokens = sapi_voices.GetVoices()
+                    voices = []
+                    for i in range(voice_tokens.Count):
+                        voice = voice_tokens.Item(i)
+                        voice_id = voice.Id
+                        voice_name = voice.GetDescription()
+                        voices.append({'id': voice_id, 'name': voice_name})
+                except Exception as e:
+                    logger.error(f"获取Windows SAPI语音失败: {e}")
+                    voices = []
+            elif PYTTSX3_AVAILABLE:
+                # 备用方案：直接使用pyttsx3
+                try:
+                    import pyttsx3
+                    engine = pyttsx3.init()
+                    raw_voices = engine.getProperty('voices')
+                    voices = [{'id': voice.id, 'name': voice.name or voice.id} for voice in raw_voices]
+                except Exception as e:
+                    logger.error(f"获取pyttsx3语音失败: {e}")
+                    voices = []
+            else:
+                voices = []
+                
+            return jsonify({
+                'success': True,
+                'voices': voices,
+                'tts_method': 'system'
+            })
+            
+        elif tts_method == 'polly':
+            # 获取Polly TTS语音列表
+            if PYLIPS_AVAILABLE:
+                from pylips.speech import PollyTTS
+                polly_tts = PollyTTS()
+                raw_voices = polly_tts.voices
+                voices = [{'id': voice, 'name': voice} for voice in raw_voices]
+            else:
+                # 硬编码的Polly语音列表作为备用
+                raw_voices = ['Zeina','Hala','Zayd','Lisa','Arlet','Hiujin','Zhiyu','Naja','Mads',
+                         'Sofie','Laura','Lotte','Ruben','Nicole','Olivia','Russell','Amy','Emma',
+                         'Brian','Arthur','Aditi','Raveena','Kajal','Niamh','Aria','Ayanda','Danielle',
+                         'Gregory','Ivy','Joanna','Kendra','Kimberly','Salli','Joey','Justin','Kevin',
+                         'Matthew','Ruth','Stephen','Geraint','Suvi','Celine','Léa','Mathieu','Rémi',
+                         'Isabelle','Chantal','Gabrielle','Liam','Marlene','Vicki','Hans','Daniel',
+                         'Hannah','Aditi','Kajal','Dora','Karl','Carla','Bianca','Giorgio','Adriano',
+                         'Mizuki','Takumi','Kazuha','Tomoko','Seoyeon','Liv','Ida','Ewa','Maja','Jacek',
+                         'Jan','Ola','Camila','Vitoria','Ricardo','Thiago','Ines','Cristiano','Carmen',
+                         'Tatyana','Maxim','Conchita','Lucia','Enrique','Sergio','Mia','Andrés','Lupe',
+                         'Penelope','Miguel','Pedro','Astrid','Elin','Filiz','Burcu','Gwyneth']
+                voices = [{'id': voice, 'name': voice} for voice in raw_voices]
+                         
+            return jsonify({
+                'success': True,
+                'voices': voices,
+                'tts_method': 'polly'
+            })
+            
+        else:
+            return jsonify({
+                'success': False,
+                'message': f'不支持的TTS方法: {tts_method}'
+            }), 400
+            
+    except Exception as e:
+        logger.error(f"获取语音列表失败: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'获取语音列表失败: {str(e)}'
+        }), 500
+
 if __name__ == '__main__':
     print("启动PyLips微服务...")
     print("API端点:")
@@ -400,6 +551,7 @@ if __name__ == '__main__':
     print("- POST /config - 更新配置")
     print("- GET /status - 获取状态")
     print("- GET /health - 健康检查")
+    print("- GET /voices - 获取可用语音列表")
     
     # 启动Flask应用
     app.run(host='0.0.0.0', port=3001, debug=False)
