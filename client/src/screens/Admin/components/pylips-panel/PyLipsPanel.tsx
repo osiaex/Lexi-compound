@@ -45,9 +45,11 @@ import {
     lookAt,
     updatePyLipsConfig,
     getPyLipsVoices,
+    setAppearance,
     type PyLipsStatus,
     type PyLipsConfig,
-    type VoiceInfo
+    type VoiceInfo,
+    type AppearanceConfig
 } from '@DAL/server-requests/pylips';
 
 const PyLipsPanel: React.FC = () => {
@@ -64,6 +66,25 @@ const PyLipsPanel: React.FC = () => {
     const [isServiceHealthy, setIsServiceHealthy] = useState(false);
     const [availableVoices, setAvailableVoices] = useState<VoiceInfo[]>([]);
     const [useManualVoiceId, setUseManualVoiceId] = useState(false);
+    const [showAppearanceDialog, setShowAppearanceDialog] = useState(false);
+    const [appearanceConfig, setAppearanceConfig] = useState({
+        background_color: '#D7E4F5',
+        eyeball_color: '#ffffff',
+        iris_color: '#800080',
+        eye_size: 150,
+        eye_height: 80,
+        eye_separation: 400,
+        iris_size: 80,
+        pupil_scale: 0.7,
+        mouth_color: '#2c241b',
+        mouth_width: 450,
+        mouth_height: 20,
+        mouth_thickness: 18,
+        brow_color: '#2c241b',
+        brow_width: 130,
+        brow_height: 120,
+        brow_thickness: 18
+    });
 
     useEffect(() => {
         refreshStatus();
@@ -219,6 +240,26 @@ const PyLipsPanel: React.FC = () => {
         loadVoices();
     };
 
+    const handleAppearanceDialogOpen = () => {
+        setShowAppearanceDialog(true);
+    };
+
+    const handleUpdateAppearance = async () => {
+        setIsLoading(true);
+        try {
+            const result = await setAppearance(appearanceConfig);
+            if (result.success) {
+                setShowAppearanceDialog(false);
+            } else {
+                setError(result.message || t('pylips.errors.updateAppearanceFailed'));
+            }
+        } catch (err) {
+            setError(t('pylips.errors.updateAppearanceFailed') + ': ' + err.message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const getStatusColor = () => {
         if (!isServiceHealthy) return 'error';
         if (status?.face_server_running && status?.face_initialized) return 'success';
@@ -311,6 +352,16 @@ const PyLipsPanel: React.FC = () => {
                                     disabled={isLoading}
                                 >
                                     {t('pylips.config')}
+                                </Button>
+                            </Grid>
+                            <Grid item>
+                                <Button
+                                    variant="outlined"
+                                    startIcon={<Face />}
+                                    onClick={handleAppearanceDialogOpen}
+                                    disabled={isLoading || !status?.face_initialized}
+                                >
+                                    {t('pylips.appearance')}
                                 </Button>
                             </Grid>
                         </Grid>
@@ -492,6 +543,211 @@ const PyLipsPanel: React.FC = () => {
                     </Button>
                     <Button onClick={handleUpdateConfig} variant="contained" disabled={isLoading}>
                         {isLoading ? <CircularProgress size={20} /> : t('pylips.applyConfig')}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* 外观设置对话框 */}
+            <Dialog open={showAppearanceDialog} onClose={() => setShowAppearanceDialog(false)} maxWidth="md" fullWidth>
+                <DialogTitle>{t('pylips.appearanceTitle')}</DialogTitle>
+                <DialogContent>
+                    <Box mt={2}>
+                        <Grid container spacing={3}>
+                            <Grid item xs={12} md={6}>
+                                <Typography variant="h6" gutterBottom>
+                                    颜色设置
+                                </Typography>
+                                <Grid container spacing={2}>
+                                    <Grid item xs={12}>
+                                        <Box display="flex" alignItems="center" gap={2}>
+                                            <Typography variant="body2" sx={{ minWidth: 100 }}>
+                                                背景颜色
+                                            </Typography>
+                                            <TextField
+                                                type="color"
+                                                value={appearanceConfig.background_color}
+                                                onChange={(e) => setAppearanceConfig({
+                                                    ...appearanceConfig,
+                                                    background_color: e.target.value
+                                                })}
+                                                sx={{ width: 60 }}
+                                            />
+                                            <Typography variant="body2" color="textSecondary">
+                                                {appearanceConfig.background_color}
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Box display="flex" alignItems="center" gap={2}>
+                                            <Typography variant="body2" sx={{ minWidth: 100 }}>
+                                                眼球颜色
+                                            </Typography>
+                                            <TextField
+                                                type="color"
+                                                value={appearanceConfig.eyeball_color}
+                                                onChange={(e) => setAppearanceConfig({
+                                                    ...appearanceConfig,
+                                                    eyeball_color: e.target.value
+                                                })}
+                                                sx={{ width: 60 }}
+                                            />
+                                            <Typography variant="body2" color="textSecondary">
+                                                {appearanceConfig.eyeball_color}
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Box display="flex" alignItems="center" gap={2}>
+                                            <Typography variant="body2" sx={{ minWidth: 100 }}>
+                                                虹膜颜色
+                                            </Typography>
+                                            <TextField
+                                                type="color"
+                                                value={appearanceConfig.iris_color}
+                                                onChange={(e) => setAppearanceConfig({
+                                                    ...appearanceConfig,
+                                                    iris_color: e.target.value
+                                                })}
+                                                sx={{ width: 60 }}
+                                            />
+                                            <Typography variant="body2" color="textSecondary">
+                                                {appearanceConfig.iris_color}
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Box display="flex" alignItems="center" gap={2}>
+                                            <Typography variant="body2" sx={{ minWidth: 100 }}>
+                                                嘴巴颜色
+                                            </Typography>
+                                            <TextField
+                                                type="color"
+                                                value={appearanceConfig.mouth_color}
+                                                onChange={(e) => setAppearanceConfig({
+                                                    ...appearanceConfig,
+                                                    mouth_color: e.target.value
+                                                })}
+                                                sx={{ width: 60 }}
+                                            />
+                                            <Typography variant="body2" color="textSecondary">
+                                                {appearanceConfig.mouth_color}
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Box display="flex" alignItems="center" gap={2}>
+                                            <Typography variant="body2" sx={{ minWidth: 100 }}>
+                                                眉毛颜色
+                                            </Typography>
+                                            <TextField
+                                                type="color"
+                                                value={appearanceConfig.brow_color}
+                                                onChange={(e) => setAppearanceConfig({
+                                                    ...appearanceConfig,
+                                                    brow_color: e.target.value
+                                                })}
+                                                sx={{ width: 60 }}
+                                            />
+                                            <Typography variant="body2" color="textSecondary">
+                                                {appearanceConfig.brow_color}
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                </Grid>
+                            </Grid>
+                            
+                            <Grid item xs={12} md={6}>
+                                <Typography variant="h6" gutterBottom>
+                                    尺寸设置
+                                </Typography>
+                                <Grid container spacing={2}>
+                                    <Grid item xs={12}>
+                                        <Typography variant="body2" gutterBottom>
+                                            眼睛大小: {appearanceConfig.eye_size}
+                                        </Typography>
+                                        <Box px={2}>
+                                            <input
+                                                type="range"
+                                                min="50"
+                                                max="300"
+                                                step="10"
+                                                value={appearanceConfig.eye_size}
+                                                onChange={(e) => setAppearanceConfig({
+                                                    ...appearanceConfig,
+                                                    eye_size: parseInt(e.target.value)
+                                                })}
+                                                style={{ width: '100%' }}
+                                            />
+                                        </Box>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Typography variant="body2" gutterBottom>
+                                            虹膜大小: {appearanceConfig.iris_size}
+                                        </Typography>
+                                        <Box px={2}>
+                                            <input
+                                                type="range"
+                                                min="30"
+                                                max="150"
+                                                step="5"
+                                                value={appearanceConfig.iris_size}
+                                                onChange={(e) => setAppearanceConfig({
+                                                    ...appearanceConfig,
+                                                    iris_size: parseInt(e.target.value)
+                                                })}
+                                                style={{ width: '100%' }}
+                                            />
+                                        </Box>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Typography variant="body2" gutterBottom>
+                                            嘴巴宽度: {appearanceConfig.mouth_width}
+                                        </Typography>
+                                        <Box px={2}>
+                                            <input
+                                                type="range"
+                                                min="200"
+                                                max="600"
+                                                step="10"
+                                                value={appearanceConfig.mouth_width}
+                                                onChange={(e) => setAppearanceConfig({
+                                                    ...appearanceConfig,
+                                                    mouth_width: parseInt(e.target.value)
+                                                })}
+                                                style={{ width: '100%' }}
+                                            />
+                                        </Box>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Typography variant="body2" gutterBottom>
+                                            眉毛宽度: {appearanceConfig.brow_width}
+                                        </Typography>
+                                        <Box px={2}>
+                                            <input
+                                                type="range"
+                                                min="50"
+                                                max="200"
+                                                step="5"
+                                                value={appearanceConfig.brow_width}
+                                                onChange={(e) => setAppearanceConfig({
+                                                    ...appearanceConfig,
+                                                    brow_width: parseInt(e.target.value)
+                                                })}
+                                                style={{ width: '100%' }}
+                                            />
+                                        </Box>
+                                    </Grid>
+                                </Grid>
+                            </Grid>
+                        </Grid>
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setShowAppearanceDialog(false)}>
+                        {t('common.cancel')}
+                    </Button>
+                    <Button onClick={handleUpdateAppearance} variant="contained" disabled={isLoading}>
+                        {isLoading ? <CircularProgress size={20} /> : t('pylips.applyAppearance')}
                     </Button>
                 </DialogActions>
             </Dialog>

@@ -20,6 +20,9 @@ export const pylipsRouter = () => {
     // 注视控制
     router.post('/look', pylipsController.look);
     
+    // 外观控制
+    router.post('/appearance', pylipsController.setAppearance);
+    
     // 配置管理
     router.post('/config', pylipsController.updateConfig);
     router.get('/voices', pylipsController.getVoices);

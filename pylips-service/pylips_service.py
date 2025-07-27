@@ -278,6 +278,21 @@ class PyLipsService:
         except Exception as e:
             logger.error(f"停止语音失败: {e}")
             return False
+    
+    def set_appearance(self, appearance_config):
+        """设置面孔外观"""
+        if not self.face:
+            logger.warning("PyLips面孔未初始化，无法设置外观")
+            return False
+            
+        try:
+            self.face.set_appearance(appearance_config)
+            logger.info(f"面孔外观已更新: {appearance_config}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"设置面孔外观失败: {e}")
+            return False
 
 # 全局服务实例
 pylips_service = PyLipsService()
@@ -452,6 +467,28 @@ def get_status():
         'tts_method': pylips_service.tts_method
     })
 
+@app.route('/appearance', methods=['POST'])
+def set_appearance():
+    """设置面孔外观"""
+    data = request.get_json()
+    
+    if not data:
+        return jsonify({'success': False, 'message': '缺少外观配置参数'}), 400
+    
+    success = pylips_service.set_appearance(data)
+    
+    if success:
+        return jsonify({
+            'success': True,
+            'message': '面孔外观已更新',
+            'config': data
+        })
+    else:
+        return jsonify({
+            'success': False,
+            'message': '设置面孔外观失败'
+        }), 500
+
 @app.route('/voices', methods=['GET'])
 def get_voices():
     """获取可用语音包列表"""
@@ -549,6 +586,7 @@ if __name__ == '__main__':
     print("- POST /look - 控制注视")
     print("- POST /stop-speech - 停止语音")
     print("- POST /config - 更新配置")
+    print("- POST /appearance - 设置面孔外观")
     print("- GET /status - 获取状态")
     print("- GET /health - 健康检查")
     print("- GET /voices - 获取可用语音列表")

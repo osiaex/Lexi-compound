@@ -202,6 +202,29 @@ class PyLipsController {
     });
 
     /**
+     * 设置面孔外观
+     */
+    setAppearance = requestHandler(async (req: Request, res: Response) => {
+        const appearanceConfig = req.body;
+        
+        if (!appearanceConfig || Object.keys(appearanceConfig).length === 0) {
+            res.status(400).json({
+                success: false,
+                message: '缺少外观配置参数'
+            });
+            return;
+        }
+        
+        const result = await pylipsService.setAppearance(appearanceConfig);
+        
+        if (result.success) {
+            res.status(200).json(result);
+        } else {
+            res.status(500).json(result);
+        }
+    });
+
+    /**
      * 健康检查
      */
     healthCheck = requestHandler(async (req: Request, res: Response) => {

@@ -616,6 +616,61 @@ class PyLipsService {
             };
         }
     }
+
+    /**
+     * 设置面孔外观
+     */
+    async setAppearance(appearanceConfig: any): Promise<PyLipsResponse> {
+        try {
+            if (!(await this.isServiceAvailable())) {
+                console.warn('⚠️ PyLips服务不可用，外观设置将被跳过');
+                return {
+                    success: false,
+                    message: 'PyLips服务不可用，外观功能暂时无法使用'
+                };
+            }
+
+            console.log('🎨 正在设置面孔外观:', appearanceConfig);
+            const response: AxiosResponse<PyLipsResponse> = await axios.post(
+                `${this.baseUrl}/appearance`,
+                appearanceConfig,
+                { 
+                    timeout: 10000,
+                    validateStatus: (status) => status >= 200 && status < 300
+                }
+            );
+            
+            if (response.data.success) {
+                console.log('✅ 面孔外观设置完成');
+            } else {
+                console.warn('⚠️ 面孔外观设置返回失败状态:', response.data.message);
+            }
+            
+            return response.data;
+        } catch (error) {
+            let errorMessage = '设置面孔外观失败';
+            
+            if (error.code === 'ETIMEDOUT') {
+                errorMessage = '设置面孔外观超时';
+                console.error('❌ 设置面孔外观超时');
+            } else if (error.response) {
+                errorMessage = `设置面孔外观失败: ${error.response.status} ${error.response.data?.message || error.response.statusText}`;
+                console.error('❌ 设置面孔外观失败:', error.response.status, error.response.data);
+            } else if (error.code === 'ECONNREFUSED') {
+                errorMessage = 'PyLips服务连接被拒绝';
+                console.error('❌ PyLips服务连接被拒绝');
+                this.isConnected = false;
+            } else {
+                errorMessage = `设置面孔外观网络错误: ${error.message}`;
+                console.error('❌ 设置面孔外观网络错误:', error.message);
+            }
+            
+            return {
+                success: false,
+                message: errorMessage
+            };
+        }
+    }
 }
 
 export const pylipsService = new PyLipsService();

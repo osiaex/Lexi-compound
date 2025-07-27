@@ -171,3 +171,19 @@ export const getPyLipsVoices = async (ttsMethod: 'system' | 'polly' = 'system'):
         throw error;
     }
 };
+
+export interface AppearanceConfig {
+    [key: string]: any;
+}
+
+/**
+ * 设置面孔外观
+ */
+export const setAppearance = async (appearanceConfig: AppearanceConfig): Promise<PyLipsResponse> => {
+    try {
+        const response = await axiosInstance.post('/pylips/appearance', appearanceConfig);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
